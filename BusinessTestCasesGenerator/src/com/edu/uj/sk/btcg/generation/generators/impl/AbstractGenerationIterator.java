@@ -185,7 +185,7 @@ abstract class AbstractGenerationIterator implements Iterator<BpmnModel> {
 
 
 	private int computeAnnotationHeight(String text) {
-		return text.length() * 50 / 24;
+		return text.length() / 17 * 25;
 	}
 	
 	

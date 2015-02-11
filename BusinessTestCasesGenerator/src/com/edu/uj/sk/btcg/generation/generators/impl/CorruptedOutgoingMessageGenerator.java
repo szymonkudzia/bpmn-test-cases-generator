@@ -5,7 +5,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import org.activiti.bpmn.model.BpmnModel;
-import org.activiti.bpmn.model.SendTask;
+import org.activiti.bpmn.model.ServiceTask;
 
 import com.edu.uj.sk.btcg.bpmn.BpmnUtil;
 import com.edu.uj.sk.btcg.collections.CCollections;
@@ -21,7 +21,7 @@ public class CorruptedOutgoingMessageGenerator implements IGenerator {
 	}
 	
 	class It extends AbstractGenerationIterator {
-		List<List<SendTask>> messages = Lists.newArrayList();
+		List<List<ServiceTask>> messages = Lists.newArrayList();
 		
 		public It(BpmnModel originalModel) {
 			super(originalModel);
@@ -37,10 +37,10 @@ public class CorruptedOutgoingMessageGenerator implements IGenerator {
 
 		@Override
 		public BpmnModel next() {
-			List<SendTask> nextCatchEvents = messages.remove(0);
+			List<ServiceTask> nextCatchEvents = messages.remove(0);
 			
 			BpmnModel newTestCase = BpmnUtil.clone(originalModel);
-			for (SendTask e : nextCatchEvents) {
+			for (ServiceTask e : nextCatchEvents) {
 				createAnnotationForElement(newTestCase, ANNOTATION_TEXT, e);
 			}
 			
@@ -51,11 +51,12 @@ public class CorruptedOutgoingMessageGenerator implements IGenerator {
 		
 		
 		
-		private List<SendTask> selectOutgoingMessagesEvents(
+		private List<ServiceTask> selectOutgoingMessagesEvents(
 				BpmnModel model) {
 			
-			return selectAllMainProcessFlowElementsOfType(model, SendTask.class)
+			return selectAllMainProcessFlowElementsOfType(model, ServiceTask.class)
 					.stream()
+					.filter(t -> t.getType().equals("mail"))
 					.collect(Collectors.toList());
 		}
 
