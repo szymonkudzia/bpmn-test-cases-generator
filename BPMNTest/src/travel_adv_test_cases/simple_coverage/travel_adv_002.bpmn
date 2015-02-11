@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:activiti="http://activiti.org/bpmn" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:omgdc="http://www.omg.org/spec/DD/20100524/DC" xmlns:omgdi="http://www.omg.org/spec/DD/20100524/DI" xmlns:bpmn2="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" xmlns:tns="http://www.jboss.org/drools" typeLanguage="http://www.w3.org/2001/XMLSchema" expressionLanguage="http://www.w3.org/1999/XPath" targetNamespace="http://www.jboss.org/drools" xsi:schemaLocation="http://www.omg.org/spec/BPMN/20100524/MODEL BPMN20.xsd http://www.jboss.org/drools drools.xsd http://www.bpsim.org/schemas/1.0 bpsim.xsd" id="Definition">
+  <process id="com.sample.bpmn" name="Sample Process" isExecutable="true" xmlns:tns="http://www.jboss.org/drools" tns:version="1" tns:packageName="defaultPackage" tns:adHoc="false" processType="Private">
+    <scriptTask id="ScriptTask_1" name="firstclass" scriptFormat="javascript" activiti:autoStoreVariables="false">
+      <script>System.out.println("We are flying in First class");</script>
+    </scriptTask>
+    <userTask id="UserTask_1" name="buyticket" activiti:candidateGroups="john">
+      <extensionElements>
+        <activiti:formProperty id="firstName" name="FirstName"></activiti:formProperty>
+        <tns:onEntry-script scriptFormat="http://www.java.com/java">
+          <tns:script></tns:script>
+        </tns:onEntry-script>
+        <tns:onExit-script scriptFormat="http://www.java.com/java">
+          <tns:script></tns:script>
+        </tns:onExit-script>
+      </extensionElements>
+    </userTask>
+    <startEvent id="_1"></startEvent>
+    <sequenceFlow id="SequenceFlow_4" sourceRef="_1" targetRef="UserTask_1"></sequenceFlow>
+    <sequenceFlow id="SequenceFlow_5" sourceRef="UserTask_1" targetRef="ExclusiveGateway_1"></sequenceFlow>
+    <exclusiveGateway id="ExclusiveGateway_1"></exclusiveGateway>
+    <sequenceFlow id="SequenceFlow_6" sourceRef="ExclusiveGateway_1" targetRef="ScriptTask_1">
+      <conditionExpression xsi:type="tFormalExpression"><![CDATA[return money > 1000;]]></conditionExpression>
+    </sequenceFlow>
+    <inclusiveGateway id="InclusiveGateway_2"></inclusiveGateway>
+    <endEvent id="EndEvent_2" name="End"></endEvent>
+    <sequenceFlow id="SequenceFlow_10" sourceRef="ScriptTask_1" targetRef="usertask2"></sequenceFlow>
+    <sequenceFlow id="SequenceFlow_12" sourceRef="InclusiveGateway_2" targetRef="EndEvent_2"></sequenceFlow>
+    <exclusiveGateway id="ifBoughtLunch"></exclusiveGateway>
+    <sequenceFlow id="flow2" name="No" sourceRef="ifBoughtLunch" targetRef="InclusiveGateway_2"></sequenceFlow>
+    <userTask id="usertask2" name="buy lunch"></userTask>
+    <sequenceFlow id="flow4" sourceRef="usertask2" targetRef="ifBoughtLunch"></sequenceFlow>
+  </process>
+  <bpmndi:BPMNDiagram id="BPMNDiagram_com.sample.bpmn">
+    <bpmndi:BPMNPlane bpmnElement="com.sample.bpmn" id="BPMNPlane_com.sample.bpmn">
+      <bpmndi:BPMNShape bpmnElement="ScriptTask_1" id="BPMNShape_ScriptTask_1">
+        <omgdc:Bounds height="50.0" width="110.0" x="120.0" y="260.0"></omgdc:Bounds>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape bpmnElement="UserTask_1" id="BPMNShape_UserTask_1">
+        <omgdc:Bounds height="50.0" width="110.0" x="226.0" y="107.0"></omgdc:Bounds>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape bpmnElement="_1" id="BPMNShape__1">
+        <omgdc:Bounds height="36.0" width="36.0" x="263.0" y="10.0"></omgdc:Bounds>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape bpmnElement="ExclusiveGateway_1" id="BPMNShape_ExclusiveGateway_1">
+        <omgdc:Bounds height="50.0" width="50.0" x="257.0" y="200.0"></omgdc:Bounds>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape bpmnElement="InclusiveGateway_2" id="BPMNShape_InclusiveGateway_2">
+        <omgdc:Bounds height="50.0" width="50.0" x="271.0" y="610.0"></omgdc:Bounds>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape bpmnElement="EndEvent_2" id="BPMNShape_EndEvent_2">
+        <omgdc:Bounds height="36.0" width="36.0" x="274.0" y="700.0"></omgdc:Bounds>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape bpmnElement="ifBoughtLunch" id="BPMNShape_ifBoughtLunch">
+        <omgdc:Bounds height="50.0" width="50.0" x="160.0" y="450.0"></omgdc:Bounds>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape bpmnElement="usertask2" id="BPMNShape_usertask2">
+        <omgdc:Bounds height="55.0" width="105.0" x="122.0" y="360.0"></omgdc:Bounds>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge bpmnElement="SequenceFlow_4" id="BPMNEdge_SequenceFlow_4">
+        <omgdi:waypoint x="281.0" y="46.0"></omgdi:waypoint>
+        <omgdi:waypoint x="281.0" y="107.0"></omgdi:waypoint>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge bpmnElement="SequenceFlow_5" id="BPMNEdge_SequenceFlow_5">
+        <omgdi:waypoint x="281.0" y="157.0"></omgdi:waypoint>
+        <omgdi:waypoint x="282.0" y="200.0"></omgdi:waypoint>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge bpmnElement="SequenceFlow_6" id="BPMNEdge_SequenceFlow_6">
+        <omgdi:waypoint x="257.0" y="225.0"></omgdi:waypoint>
+        <omgdi:waypoint x="197.0" y="225.0"></omgdi:waypoint>
+        <omgdi:waypoint x="197.0" y="242.0"></omgdi:waypoint>
+        <omgdi:waypoint x="175.0" y="260.0"></omgdi:waypoint>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge bpmnElement="SequenceFlow_10" id="BPMNEdge_SequenceFlow_10">
+        <omgdi:waypoint x="175.0" y="310.0"></omgdi:waypoint>
+        <omgdi:waypoint x="174.0" y="360.0"></omgdi:waypoint>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge bpmnElement="SequenceFlow_12" id="BPMNEdge_SequenceFlow_12">
+        <omgdi:waypoint x="296.0" y="660.0"></omgdi:waypoint>
+        <omgdi:waypoint x="292.0" y="700.0"></omgdi:waypoint>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge bpmnElement="flow2" id="BPMNEdge_flow2">
+        <omgdi:waypoint x="185.0" y="500.0"></omgdi:waypoint>
+        <omgdi:waypoint x="179.0" y="629.0"></omgdi:waypoint>
+        <omgdi:waypoint x="271.0" y="635.0"></omgdi:waypoint>
+        <bpmndi:BPMNLabel>
+          <omgdc:Bounds height="16.0" width="100.0" x="195.0" y="500.0"></omgdc:Bounds>
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge bpmnElement="flow4" id="BPMNEdge_flow4">
+        <omgdi:waypoint x="174.0" y="415.0"></omgdi:waypoint>
+        <omgdi:waypoint x="185.0" y="450.0"></omgdi:waypoint>
+      </bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</definitions>

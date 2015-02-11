@@ -1,0 +1,244 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:activiti="http://activiti.org/bpmn" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:omgdc="http://www.omg.org/spec/DD/20100524/DC" xmlns:omgdi="http://www.omg.org/spec/DD/20100524/DI" xmlns:bpmn2="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" xmlns:tns="http://www.jboss.org/drools" typeLanguage="http://www.w3.org/2001/XMLSchema" expressionLanguage="http://www.w3.org/1999/XPath" targetNamespace="http://www.jboss.org/drools" xsi:schemaLocation="http://www.omg.org/spec/BPMN/20100524/MODEL BPMN20.xsd http://www.jboss.org/drools drools.xsd http://www.bpsim.org/schemas/1.0 bpsim.xsd" id="Definition">
+  <process id="com.sample.bpmn" name="Sample Process" isExecutable="true" xmlns:tns="http://www.jboss.org/drools" tns:version="1" tns:packageName="defaultPackage" tns:adHoc="false" processType="Private">
+    <userTask id="UserTask_1" name="generate buisiness report" activiti:candidateGroups="john">
+      <extensionElements>
+        <activiti:formProperty id="firstName" name="FirstName"></activiti:formProperty>
+        <tns:onEntry-script scriptFormat="http://www.java.com/java">
+          <tns:script></tns:script>
+        </tns:onEntry-script>
+        <tns:onExit-script scriptFormat="http://www.java.com/java">
+          <tns:script></tns:script>
+        </tns:onExit-script>
+      </extensionElements>
+    </userTask>
+    <startEvent id="_1"></startEvent>
+    <sequenceFlow id="SequenceFlow_4" sourceRef="_1" targetRef="UserTask_1"></sequenceFlow>
+    <sequenceFlow id="SequenceFlow_5" sourceRef="UserTask_1" targetRef="scripttask1"></sequenceFlow>
+    <exclusiveGateway id="ExclusiveGateway_1"></exclusiveGateway>
+    <inclusiveGateway id="InclusiveGateway_2"></inclusiveGateway>
+    <endEvent id="EndEvent_2" name="End"></endEvent>
+    <scriptTask id="scripttask1" name="Determine report type" activiti:autoStoreVariables="false"></scriptTask>
+    <sequenceFlow id="flow4" sourceRef="scripttask1" targetRef="ExclusiveGateway_1"></sequenceFlow>
+    <serviceTask id="mailtask1" name="Send search request to KRS provider" activiti:type="mail"></serviceTask>
+    <serviceTask id="mailtask2" name="Send search request to REGON provider" activiti:type="mail"></serviceTask>
+    <sequenceFlow id="flow5" name="KRS company" sourceRef="ExclusiveGateway_1" targetRef="mailtask1"></sequenceFlow>
+    <sequenceFlow id="flow6" name="REGON company" sourceRef="ExclusiveGateway_1" targetRef="mailtask2"></sequenceFlow>
+    <scriptTask id="scripttask2" name="Transform REGON response to common datamodel" activiti:autoStoreVariables="false"></scriptTask>
+    <intermediateCatchEvent id="messageintermediatecatchevent1" name="REGON Report">
+      <documentation>REGON Report</documentation>
+      <messageEventDefinition></messageEventDefinition>
+    </intermediateCatchEvent>
+    <sequenceFlow id="flow7" name="REGON Report" sourceRef="mailtask2" targetRef="messageintermediatecatchevent1"></sequenceFlow>
+    <sequenceFlow id="flow8" sourceRef="messageintermediatecatchevent1" targetRef="scripttask2"></sequenceFlow>
+    <intermediateCatchEvent id="messageintermediatecatchevent2" name="MessageCatchEvent">
+      <messageEventDefinition></messageEventDefinition>
+    </intermediateCatchEvent>
+    <sequenceFlow id="flow9" name="KRS Report" sourceRef="mailtask1" targetRef="messageintermediatecatchevent2"></sequenceFlow>
+    <scriptTask id="scripttask3" name="Transform KRS response to common datamodel" activiti:autoStoreVariables="false"></scriptTask>
+    <sequenceFlow id="flow10" sourceRef="messageintermediatecatchevent2" targetRef="scripttask3"></sequenceFlow>
+    <sequenceFlow id="flow11" sourceRef="scripttask3" targetRef="InclusiveGateway_2"></sequenceFlow>
+    <sequenceFlow id="flow12" sourceRef="scripttask2" targetRef="InclusiveGateway_2"></sequenceFlow>
+    <scriptTask id="scripttask4" name="Check if user has access to debt information" activiti:autoStoreVariables="false"></scriptTask>
+    <exclusiveGateway id="exclusivegateway1" name="Exclusive Gateway"></exclusiveGateway>
+    <sequenceFlow id="flow13" sourceRef="scripttask4" targetRef="exclusivegateway1"></sequenceFlow>
+    <serviceTask id="mailtask3" name="Get information from KRD" activiti:type="mail"></serviceTask>
+    <sequenceFlow id="flow14" name="Yes" sourceRef="exclusivegateway1" targetRef="mailtask3"></sequenceFlow>
+    <serviceTask id="mailtask4" name="Send generated report to user" activiti:type="mail"></serviceTask>
+    <inclusiveGateway id="inclusivegateway1" name="Inclusive Gateway"></inclusiveGateway>
+    <sequenceFlow id="flow15" name="No" sourceRef="exclusivegateway1" targetRef="inclusivegateway1"></sequenceFlow>
+    <sequenceFlow id="flow16" sourceRef="inclusivegateway1" targetRef="mailtask4"></sequenceFlow>
+    <sequenceFlow id="flow17" sourceRef="mailtask4" targetRef="EndEvent_2"></sequenceFlow>
+    <intermediateCatchEvent id="messageintermediatecatchevent3" name="MessageCatchEvent">
+      <messageEventDefinition></messageEventDefinition>
+    </intermediateCatchEvent>
+    <sequenceFlow id="flow18" name="Debt information from KRD" sourceRef="mailtask3" targetRef="messageintermediatecatchevent3"></sequenceFlow>
+    <scriptTask id="scripttask5" name="Add debt informatin to report" activiti:autoStoreVariables="false"></scriptTask>
+    <sequenceFlow id="flow19" sourceRef="messageintermediatecatchevent3" targetRef="scripttask5"></sequenceFlow>
+    <sequenceFlow id="flow20" sourceRef="scripttask5" targetRef="inclusivegateway1"></sequenceFlow>
+    <scriptTask id="scripttask6" name="Generate Report" activiti:autoStoreVariables="false"></scriptTask>
+    <sequenceFlow id="flow21" sourceRef="InclusiveGateway_2" targetRef="scripttask6"></sequenceFlow>
+    <sequenceFlow id="flow22" sourceRef="scripttask6" targetRef="scripttask4"></sequenceFlow>
+    <textAnnotation id="messageintermediatecatchevent2_textAnnotation">
+      <text>Message is corrupted !!!</text>
+    </textAnnotation>
+    <association sourceRef="messageintermediatecatchevent2" targetRef="messageintermediatecatchevent2_textAnnotation"></association>
+  </process>
+  <bpmndi:BPMNDiagram id="BPMNDiagram_com.sample.bpmn">
+    <bpmndi:BPMNPlane bpmnElement="com.sample.bpmn" id="BPMNPlane_com.sample.bpmn">
+      <bpmndi:BPMNShape bpmnElement="UserTask_1" id="BPMNShape_UserTask_1">
+        <omgdc:Bounds height="91.0" width="177.0" x="70.0" y="268.0"></omgdc:Bounds>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape bpmnElement="_1" id="BPMNShape__1">
+        <omgdc:Bounds height="36.0" width="36.0" x="0.0" y="297.0"></omgdc:Bounds>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape bpmnElement="ExclusiveGateway_1" id="BPMNShape_ExclusiveGateway_1">
+        <omgdc:Bounds height="50.0" width="50.0" x="550.0" y="294.0"></omgdc:Bounds>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape bpmnElement="InclusiveGateway_2" id="BPMNShape_InclusiveGateway_2">
+        <omgdc:Bounds height="50.0" width="50.0" x="1230.0" y="293.0"></omgdc:Bounds>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape bpmnElement="EndEvent_2" id="BPMNShape_EndEvent_2">
+        <omgdc:Bounds height="36.0" width="36.0" x="2460.0" y="296.0"></omgdc:Bounds>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape bpmnElement="scripttask1" id="BPMNShape_scripttask1">
+        <omgdc:Bounds height="71.0" width="151.0" x="330.0" y="278.0"></omgdc:Bounds>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape bpmnElement="mailtask1" id="BPMNShape_mailtask1">
+        <omgdc:Bounds height="85.0" width="131.0" x="703.0" y="114.0"></omgdc:Bounds>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape bpmnElement="mailtask2" id="BPMNShape_mailtask2">
+        <omgdc:Bounds height="89.0" width="125.0" x="720.0" y="414.0"></omgdc:Bounds>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape bpmnElement="scripttask2" id="BPMNShape_scripttask2">
+        <omgdc:Bounds height="91.0" width="138.0" x="1038.0" y="413.0"></omgdc:Bounds>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape bpmnElement="messageintermediatecatchevent1" id="BPMNShape_messageintermediatecatchevent1">
+        <omgdc:Bounds height="35.0" width="35.0" x="901.0" y="441.0"></omgdc:Bounds>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape bpmnElement="messageintermediatecatchevent2" id="BPMNShape_messageintermediatecatchevent2">
+        <omgdc:Bounds height="35.0" width="35.0" x="901.0" y="139.0"></omgdc:Bounds>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape bpmnElement="scripttask3" id="BPMNShape_scripttask3">
+        <omgdc:Bounds height="83.0" width="138.0" x="1038.0" y="115.0"></omgdc:Bounds>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape bpmnElement="scripttask4" id="BPMNShape_scripttask4">
+        <omgdc:Bounds height="92.0" width="121.0" x="1610.0" y="268.0"></omgdc:Bounds>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape bpmnElement="exclusivegateway1" id="BPMNShape_exclusivegateway1">
+        <omgdc:Bounds height="40.0" width="40.0" x="1776.0" y="295.0"></omgdc:Bounds>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape bpmnElement="mailtask3" id="BPMNShape_mailtask3">
+        <omgdc:Bounds height="82.0" width="105.0" x="1860.0" y="156.0"></omgdc:Bounds>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape bpmnElement="mailtask4" id="BPMNShape_mailtask4">
+        <omgdc:Bounds height="71.0" width="105.0" x="2290.0" y="278.0"></omgdc:Bounds>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape bpmnElement="inclusivegateway1" id="BPMNShape_inclusivegateway1">
+        <omgdc:Bounds height="40.0" width="40.0" x="2150.0" y="293.0"></omgdc:Bounds>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape bpmnElement="messageintermediatecatchevent3" id="BPMNShape_messageintermediatecatchevent3">
+        <omgdc:Bounds height="35.0" width="35.0" x="2020.0" y="180.0"></omgdc:Bounds>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape bpmnElement="scripttask5" id="BPMNShape_scripttask5">
+        <omgdc:Bounds height="76.0" width="105.0" x="2118.0" y="160.0"></omgdc:Bounds>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape bpmnElement="scripttask6" id="BPMNShape_scripttask6">
+        <omgdc:Bounds height="55.0" width="105.0" x="1380.0" y="286.0"></omgdc:Bounds>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape bpmnElement="messageintermediatecatchevent2_textAnnotation" id="BPMNShape_messageintermediatecatchevent2_textAnnotation">
+        <omgdc:Bounds height="50.0" width="100.0" x="901.0" y="39.0"></omgdc:Bounds>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge bpmnElement="SequenceFlow_4" id="BPMNEdge_SequenceFlow_4">
+        <omgdi:waypoint x="36.0" y="315.0"></omgdi:waypoint>
+        <omgdi:waypoint x="70.0" y="313.0"></omgdi:waypoint>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge bpmnElement="SequenceFlow_5" id="BPMNEdge_SequenceFlow_5">
+        <omgdi:waypoint x="247.0" y="313.0"></omgdi:waypoint>
+        <omgdi:waypoint x="330.0" y="313.0"></omgdi:waypoint>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge bpmnElement="flow4" id="BPMNEdge_flow4">
+        <omgdi:waypoint x="481.0" y="313.0"></omgdi:waypoint>
+        <omgdi:waypoint x="550.0" y="319.0"></omgdi:waypoint>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge bpmnElement="flow5" id="BPMNEdge_flow5">
+        <omgdi:waypoint x="575.0" y="294.0"></omgdi:waypoint>
+        <omgdi:waypoint x="570.0" y="156.0"></omgdi:waypoint>
+        <omgdi:waypoint x="703.0" y="156.0"></omgdi:waypoint>
+        <bpmndi:BPMNLabel>
+          <omgdc:Bounds height="16.0" width="84.0" x="584.0" y="221.0"></omgdc:Bounds>
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge bpmnElement="flow6" id="BPMNEdge_flow6">
+        <omgdi:waypoint x="575.0" y="344.0"></omgdi:waypoint>
+        <omgdi:waypoint x="570.0" y="458.0"></omgdi:waypoint>
+        <omgdi:waypoint x="720.0" y="458.0"></omgdi:waypoint>
+        <bpmndi:BPMNLabel>
+          <omgdc:Bounds height="48.0" width="100.0" x="585.0" y="380.0"></omgdc:Bounds>
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge bpmnElement="flow7" id="BPMNEdge_flow7">
+        <omgdi:waypoint x="845.0" y="458.0"></omgdi:waypoint>
+        <omgdi:waypoint x="901.0" y="458.0"></omgdi:waypoint>
+        <bpmndi:BPMNLabel>
+          <omgdc:Bounds height="16.0" width="89.0" x="889.0" y="487.0"></omgdc:Bounds>
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge bpmnElement="flow8" id="BPMNEdge_flow8">
+        <omgdi:waypoint x="936.0" y="458.0"></omgdi:waypoint>
+        <omgdi:waypoint x="1038.0" y="458.0"></omgdi:waypoint>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge bpmnElement="flow9" id="BPMNEdge_flow9">
+        <omgdi:waypoint x="834.0" y="156.0"></omgdi:waypoint>
+        <omgdi:waypoint x="901.0" y="156.0"></omgdi:waypoint>
+        <bpmndi:BPMNLabel>
+          <omgdc:Bounds height="16.0" width="69.0" x="879.0" y="183.0"></omgdc:Bounds>
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge bpmnElement="flow10" id="BPMNEdge_flow10">
+        <omgdi:waypoint x="936.0" y="156.0"></omgdi:waypoint>
+        <omgdi:waypoint x="1038.0" y="156.0"></omgdi:waypoint>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge bpmnElement="flow11" id="BPMNEdge_flow11">
+        <omgdi:waypoint x="1176.0" y="156.0"></omgdi:waypoint>
+        <omgdi:waypoint x="1250.0" y="156.0"></omgdi:waypoint>
+        <omgdi:waypoint x="1255.0" y="293.0"></omgdi:waypoint>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge bpmnElement="flow12" id="BPMNEdge_flow12">
+        <omgdi:waypoint x="1176.0" y="458.0"></omgdi:waypoint>
+        <omgdi:waypoint x="1250.0" y="458.0"></omgdi:waypoint>
+        <omgdi:waypoint x="1255.0" y="343.0"></omgdi:waypoint>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge bpmnElement="flow13" id="BPMNEdge_flow13">
+        <omgdi:waypoint x="1731.0" y="314.0"></omgdi:waypoint>
+        <omgdi:waypoint x="1776.0" y="315.0"></omgdi:waypoint>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge bpmnElement="flow14" id="BPMNEdge_flow14">
+        <omgdi:waypoint x="1796.0" y="295.0"></omgdi:waypoint>
+        <omgdi:waypoint x="1795.0" y="196.0"></omgdi:waypoint>
+        <omgdi:waypoint x="1860.0" y="197.0"></omgdi:waypoint>
+        <bpmndi:BPMNLabel>
+          <omgdc:Bounds height="16.0" width="23.0" x="1761.0" y="238.0"></omgdc:Bounds>
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge bpmnElement="flow15" id="BPMNEdge_flow15">
+        <omgdi:waypoint x="1816.0" y="315.0"></omgdi:waypoint>
+        <omgdi:waypoint x="2150.0" y="313.0"></omgdi:waypoint>
+        <bpmndi:BPMNLabel>
+          <omgdc:Bounds height="16.0" width="16.0" x="1921.0" y="318.0"></omgdc:Bounds>
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge bpmnElement="flow16" id="BPMNEdge_flow16">
+        <omgdi:waypoint x="2190.0" y="313.0"></omgdi:waypoint>
+        <omgdi:waypoint x="2290.0" y="313.0"></omgdi:waypoint>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge bpmnElement="flow17" id="BPMNEdge_flow17">
+        <omgdi:waypoint x="2395.0" y="313.0"></omgdi:waypoint>
+        <omgdi:waypoint x="2460.0" y="314.0"></omgdi:waypoint>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge bpmnElement="flow18" id="BPMNEdge_flow18">
+        <omgdi:waypoint x="1965.0" y="197.0"></omgdi:waypoint>
+        <omgdi:waypoint x="2020.0" y="197.0"></omgdi:waypoint>
+        <bpmndi:BPMNLabel>
+          <omgdc:Bounds height="48.0" width="100.0" x="1987.0" y="214.0"></omgdc:Bounds>
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge bpmnElement="flow19" id="BPMNEdge_flow19">
+        <omgdi:waypoint x="2055.0" y="197.0"></omgdi:waypoint>
+        <omgdi:waypoint x="2118.0" y="198.0"></omgdi:waypoint>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge bpmnElement="flow20" id="BPMNEdge_flow20">
+        <omgdi:waypoint x="2170.0" y="236.0"></omgdi:waypoint>
+        <omgdi:waypoint x="2170.0" y="293.0"></omgdi:waypoint>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge bpmnElement="flow21" id="BPMNEdge_flow21">
+        <omgdi:waypoint x="1280.0" y="318.0"></omgdi:waypoint>
+        <omgdi:waypoint x="1380.0" y="313.0"></omgdi:waypoint>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge bpmnElement="flow22" id="BPMNEdge_flow22">
+        <omgdi:waypoint x="1485.0" y="313.0"></omgdi:waypoint>
+        <omgdi:waypoint x="1610.0" y="314.0"></omgdi:waypoint>
+      </bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</definitions>
