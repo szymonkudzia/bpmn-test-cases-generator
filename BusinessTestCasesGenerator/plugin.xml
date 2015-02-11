@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?eclipse version="3.4"?>
+<plugin>
+
+   <extension
+         point="org.eclipse.ui.editors">
+      <editor
+            name="Generated Test Cases"
+            extensions="xml"
+            icon="icons/sample.gif"
+            contributorClass="org.eclipse.ui.texteditor.BasicTextEditorActionContributor"
+            class="com.edu.uj.sk.btcg.editors.GeneratedTestCasesEditor"
+            id="com.edu.uj.sk.btcg.editors.GeneratedTestCasesEditor">
+      </editor>
+   </extension>
+
+	<extension point="org.eclipse.ui.menus">
+    <menuContribution locationURI="popup:org.eclipse.jdt.ui.PackageExplorer">
+      <command commandId="com.edu.uj.sk.btcg.generation.GenerateTestCasesHandler"
+        label="Generate Test Cases" style="push">
+      </command>
+    </menuContribution>
+  </extension>
+  
+  <extension point="org.eclipse.ui.commands">
+    <command defaultHandler="com.edu.uj.sk.btcg.generation.GenerateTestCasesHandler"
+      id="com.edu.uj.sk.btcg.generation.GenerateTestCasesHandler" name="GenerateTestCasesHandler">
+    </command>
+  </extension>
+  
+</plugin>
