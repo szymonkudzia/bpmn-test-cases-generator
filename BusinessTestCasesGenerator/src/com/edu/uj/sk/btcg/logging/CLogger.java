@@ -99,6 +99,7 @@ public class CLogger {
 	
 	private class ConsoleFormatter extends Formatter {
 		
+		@SuppressWarnings("deprecation")
 		@Override
 		public String format(LogRecord record) {
 			return String.format("%s %s %s\n%s: %s\n", 
