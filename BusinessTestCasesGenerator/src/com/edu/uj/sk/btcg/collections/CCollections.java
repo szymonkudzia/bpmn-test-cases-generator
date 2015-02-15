@@ -11,6 +11,7 @@ import java.util.stream.Collectors;
 import com.google.common.base.Optional;
 import com.google.common.base.Predicate;
 import com.google.common.collect.Collections2;
+import com.google.common.collect.Lists;
 
 public class CCollections {
 	public static <T> Optional<T> find(Collection<T> collection, Predicate<? super T> predicate) {
@@ -70,5 +71,40 @@ public class CCollections {
 	    	sets.add(set);
 	    }		
 	    return sets;
+	}
+	
+	
+	public static <T> List<List<T>> allCombinations(List<Collection<T>> collections) {
+		List<List<T>> result = Lists.newArrayList();
+		int[] indexes = new int[collections.size()];
+		
+		while (indexes[0] < collections.get(0).size() - 1) {
+			for (int i = indexes.length - 1; i >= 0; --i) {
+				indexes[i]++;
+				
+				if (indexes[i] >= collections.get(i).size()) {
+					if (i > 0) {
+						indexes[i] = 0;
+						continue;
+					}
+				}
+				
+				break;
+			}
+			
+			result.add(newList(collections, indexes));
+		}
+		
+		return result;
+	}
+	
+	private static <T> List<T> newList(List<Collection<T>> collections, int[] indexes){
+		List<T> result = Lists.newArrayList();
+		
+		for (int i = 0; i < indexes.length; ++i) {
+			result.add(new ArrayList<>(collections.get(i)).get(indexes[i]));
+		}
+		
+		return result;
 	}
 }

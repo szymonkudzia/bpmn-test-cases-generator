@@ -7,6 +7,7 @@ import org.activiti.bpmn.model.BpmnModel;
 import com.edu.uj.sk.btcg.bpmn.BpmnUtil;
 import com.edu.uj.sk.btcg.generation.generators.impl.CorruptedIncomingMessageGenerator;
 import com.edu.uj.sk.btcg.generation.generators.impl.CorruptedOutgoingMessageGenerator;
+import com.edu.uj.sk.btcg.generation.generators.impl.CoverageByConditionEvaluation;
 import com.edu.uj.sk.btcg.generation.generators.impl.SimpleCoverageGenerator;
 import com.edu.uj.sk.btcg.logging.CLogger;
 import com.edu.uj.sk.btcg.persistance.TestCasePersister;
@@ -21,6 +22,7 @@ public class ProcessorsExecuter {
 		processors.add(new Processor("simple_coverage", new SimpleCoverageGenerator()));
 		processors.add(new Processor("corrupted_incoming_message", new CorruptedIncomingMessageGenerator()));
 		processors.add(new Processor("corrupted_outgoing_message", new CorruptedOutgoingMessageGenerator()));
+		processors.add(new Processor("coverage_by_condition_evaluation", new CoverageByConditionEvaluation()));
 		processors.add(new MergingProcessor("all_strategies_at_once", Lists.newArrayList(
 			new SimpleCoverageGenerator(),
 			new CorruptedIncomingMessageGenerator(),

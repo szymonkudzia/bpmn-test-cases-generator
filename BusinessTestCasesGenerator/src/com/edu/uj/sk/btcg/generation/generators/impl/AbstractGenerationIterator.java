@@ -43,7 +43,10 @@ abstract class AbstractGenerationIterator implements Iterator<BpmnModel> {
 	 * @return
 	 */
 	protected GraphicInfo getGraphicInfo(BpmnModel model, BaseElement element) {
-		return model.getGraphicInfo(element.getId());
+		GraphicInfo gi = model.getGraphicInfo(element.getId());
+		if (gi != null) return gi;
+		
+		return model.getLabelGraphicInfo(element.getId());
 	}
 	
 	protected ExclusiveGateway getExclusiveGateway(BpmnModel model, ExclusiveGateway gateway) {
