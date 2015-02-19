@@ -45,8 +45,12 @@ abstract class AbstractGenerationIterator implements Iterator<BpmnModel> {
 	protected GraphicInfo getGraphicInfo(BpmnModel model, BaseElement element) {
 		GraphicInfo gi = model.getGraphicInfo(element.getId());
 		if (gi != null) return gi;
+
+		List<GraphicInfo> gis = model.getFlowLocationGraphicInfo(element.getId());
 		
-		return model.getLabelGraphicInfo(element.getId());
+		if (!gis.isEmpty()) return gis.get(0);
+
+		throw new IllegalStateException("Could not find GraphicInfo for element with id: " + element.getId());
 	}
 	
 	protected ExclusiveGateway getExclusiveGateway(BpmnModel model, ExclusiveGateway gateway) {
