@@ -78,7 +78,9 @@ public class CCollections {
 		List<List<T>> result = Lists.newArrayList();
 		int[] indexes = new int[collections.size()];
 		
-		while (indexes[0] < collections.get(0).size() - 1) {
+		while (indexes[0] < collections.get(0).size()) {
+			result.add(newList(collections, indexes));
+
 			for (int i = indexes.length - 1; i >= 0; --i) {
 				indexes[i]++;
 				
@@ -91,8 +93,6 @@ public class CCollections {
 				
 				break;
 			}
-			
-			result.add(newList(collections, indexes));
 		}
 		
 		return result;

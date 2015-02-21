@@ -1,6 +1,5 @@
 package com.edu.uj.sk.btcg.generation.generators.impl;
 
-import java.util.Base64;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
@@ -9,13 +8,11 @@ import java.util.Stack;
 import java.util.stream.Collectors;
 
 import org.activiti.bpmn.model.BpmnModel;
-import org.activiti.bpmn.model.ExtensionElement;
 import org.activiti.bpmn.model.FlowElement;
 import org.activiti.bpmn.model.FlowNode;
 import org.activiti.bpmn.model.FormProperty;
 import org.activiti.bpmn.model.Gateway;
 import org.activiti.bpmn.model.SequenceFlow;
-import org.activiti.bpmn.model.StartEvent;
 import org.activiti.bpmn.model.UserTask;
 import org.apache.commons.lang.StringUtils;
 
@@ -27,7 +24,7 @@ import com.edu.uj.sk.btcg.logic.BooleanExpressionTree;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Lists;
 
-public class CoverageByConditionEvaluation implements IGenerator {
+public class CoverageByConditionEvaluationNaive implements IGenerator {
 
 	@Override
 	public Iterator<BpmnModel> generate(BpmnModel originalModel) {
@@ -225,9 +222,11 @@ public class CoverageByConditionEvaluation implements IGenerator {
 					possibleValues.put(variable, dval + 1);
 					possibleValues.put(variable, dval);
 					possibleValues.put(variable, dval - 1);
+					possibleValues.put(variable, "null");
 				} else {
 					possibleValues.put(variable, value);
-					possibleValues.put(variable, Base64.getEncoder().encodeToString(value.getBytes()));
+					possibleValues.put(variable, "");
+					possibleValues.put(variable, "null");
 				}
 				
 			}
