@@ -14,7 +14,7 @@ public class BooleanExpressionTree {
 	}
 	
 	public static BooleanExpressionTree create(String expression) {
-		return new BooleanExpressionTreeBuilder().build(expression);
+		return BooleanExpressionTreeBuilder.create().build(expression);
 	}
 	
 
