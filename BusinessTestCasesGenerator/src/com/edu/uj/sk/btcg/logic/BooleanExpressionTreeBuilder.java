@@ -102,7 +102,9 @@ public class BooleanExpressionTreeBuilder {
 		
 		if (tokenizer.isOperator(token)) {
 			node.setRight(buildExpressionTree(expressionStack));
-			node.setLeft(buildExpressionTree(expressionStack));
+			
+			if (!token.equals("!"))
+				node.setLeft(buildExpressionTree(expressionStack));
 		}
 		
 		return Optional.of(node);

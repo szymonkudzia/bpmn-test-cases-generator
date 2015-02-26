@@ -63,7 +63,7 @@ public class VariableValueExtractor {
 						possibleValues, 
 						node.get().getLeft().get().getValue(), 
 						node.get().getValue(), 
-						node.get().getRight().get());
+						node.get().getRight());
 				
 				node = node.get().getRight();
 				
@@ -72,7 +72,7 @@ public class VariableValueExtractor {
 						possibleValues, 
 						node.get().getRight().get().getValue(), 
 						node.get().getValue(), 
-						node.get().getLeft().get());
+						node.get().getLeft());
 				
 				node = node.get().getLeft();
 			} else {
@@ -99,16 +99,16 @@ public class VariableValueExtractor {
 			HashMultimap<String, Object> possibleValues,
 			String variable, 
 			String operator,
-			BooleanExpressionNode sibling) {
+			Optional<BooleanExpressionNode> sibling) {
 
-		if (Lists.newArrayList("&&", "||", "!").contains(operator)) {
+		if (Lists.newArrayList("!").contains(operator)) {
 			possibleValues.put(variable, Boolean.TRUE);
 			possibleValues.put(variable, Boolean.FALSE);
 			possibleValues.put(variable, null);
 		} else {
-			String value = sibling.getValue();
+			String value = sibling.get().getValue();
 			
-			if (tokenizer.isOperator(sibling.getValue())) {
+			if (tokenizer.isOperator(sibling.get().getValue())) {
 				// TODO evaluate sibling
 			}
 			

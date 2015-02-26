@@ -37,18 +37,10 @@ public class VariableValueExtractorTest {
 	
 	
 	@Test
-	public void booleanComparison_returnedFourValues() {
-		Lists.newArrayList(
-			"&&", "!", "||"
-		).forEach(operator -> assertOneVariableWithThreeBooleanValuesReturned(operator));
-	}
-
-	private void assertOneVariableWithThreeBooleanValuesReturned(
-			String operator) {
-		String expression = String.format("variable %s true", operator);
+	public void forExclamationThreeValuesAreReturned() {
 		
 		Multimap<String, Object> variableValueMap =
-				variableValueExtractor.extractVariableValueMap(expression);
+				variableValueExtractor.extractVariableValueMap("!variable");
 
 		assertThat(variableValueMap.asMap()).containsOnlyKeys("variable");
 		assertThat(variableValueMap.values()).containsOnly(null, true, false);
