@@ -1,20 +1,36 @@
-package com.edu.uj.sk.btcg.logic;
+package com.edu.uj.sk.btcg.logic.extractors;
 
 import java.util.Optional;
 
+import org.activiti.bpmn.model.SequenceFlow;
+import org.apache.commons.lang.StringUtils;
+
+import com.edu.uj.sk.btcg.logic.BooleanExpressionNode;
+import com.edu.uj.sk.btcg.logic.BooleanExpressionTree;
+import com.edu.uj.sk.btcg.logic.Tokenizer;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Multimap;
 
-public class VariableValueExtractor {
+public class VariableValueExtractorFromCondition extends AbstractVariableValueExtractor<SequenceFlow>{
 	private Tokenizer tokenizer = Tokenizer.create();
 	
-	private VariableValueExtractor() {
+	private VariableValueExtractorFromCondition() {
 	}
 	
 	
-	public static VariableValueExtractor create() {
-		return new VariableValueExtractor();
+	public static VariableValueExtractorFromCondition create() {
+		return new VariableValueExtractorFromCondition();
+	}
+	
+	@Override
+	protected Multimap<String, Object> doExtraction(SequenceFlow element) {
+		String conditionExpression = element.getConditionExpression();
+		
+		if (StringUtils.isBlank(conditionExpression))
+			return HashMultimap.create();
+		
+		return extractVariableValueMap(conditionExpression);
 	}
 	
 	
@@ -141,9 +157,8 @@ public class VariableValueExtractor {
 	public void setTokenizer(Tokenizer tokenizer) {
 		this.tokenizer = tokenizer;
 	}
-	
-	
-	
+
+
 	
 	
 }

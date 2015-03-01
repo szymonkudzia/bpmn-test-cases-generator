@@ -7,6 +7,7 @@ import java.util.stream.Collectors;
 import org.activiti.bpmn.model.BpmnModel;
 import org.activiti.bpmn.model.ServiceTask;
 
+import com.edu.uj.sk.btcg.bpmn.BpmnQueries;
 import com.edu.uj.sk.btcg.bpmn.BpmnUtil;
 import com.edu.uj.sk.btcg.collections.CCollections;
 import com.edu.uj.sk.btcg.generation.generators.IGenerator;
@@ -54,7 +55,7 @@ public class CorruptedOutgoingMessageGenerator implements IGenerator {
 		private List<ServiceTask> selectOutgoingMessagesEvents(
 				BpmnModel model) {
 			
-			return selectAllMainProcessFlowElementsOfType(model, ServiceTask.class)
+			return BpmnQueries.selectAllOfType(model, ServiceTask.class)
 					.stream()
 					.filter(t -> t.getType().equals("mail"))
 					.collect(Collectors.toList());

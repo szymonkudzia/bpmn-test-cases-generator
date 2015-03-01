@@ -1,19 +1,20 @@
-package com.edu.uj.sk.btcg.logic;
+package com.edu.uj.sk.btcg.logic.extractors;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 import org.junit.Before;
 import org.junit.Test;
 
+import com.edu.uj.sk.btcg.logic.extractors.VariableValueExtractorFromCondition;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Multimap;
 
-public class VariableValueExtractorTest {
-	private VariableValueExtractor variableValueExtractor;
+public class VariableValueExtractorFromConditionTest {
+	private VariableValueExtractorFromCondition variableValueExtractor;
 	
 	@Before
 	public void setUp() throws Exception {
-		variableValueExtractor = VariableValueExtractor.create();
+		variableValueExtractor = VariableValueExtractorFromCondition.create();
 	}
 
 	@Test

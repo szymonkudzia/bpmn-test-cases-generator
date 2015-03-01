@@ -1,36 +1,45 @@
 package com.edu.uj.sk.btcg.generation.generators.impl;
 
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Stack;
+import java.util.Optional;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.activiti.bpmn.model.BpmnModel;
+import org.activiti.bpmn.model.Event;
+import org.activiti.bpmn.model.EventDefinition;
 import org.activiti.bpmn.model.FlowElement;
-import org.activiti.bpmn.model.FlowNode;
 import org.activiti.bpmn.model.FormProperty;
+import org.activiti.bpmn.model.IntermediateCatchEvent;
+import org.activiti.bpmn.model.Message;
+import org.activiti.bpmn.model.MessageEventDefinition;
+import org.activiti.bpmn.model.ScriptTask;
 import org.activiti.bpmn.model.SequenceFlow;
 import org.activiti.bpmn.model.StartEvent;
+import org.activiti.bpmn.model.Task;
 import org.activiti.bpmn.model.UserTask;
 import org.apache.commons.lang.StringUtils;
-import org.apache.commons.lang3.tuple.Pair;
 
+import com.edu.uj.sk.btcg.bpmn.BpmnGraphTraversal;
+import com.edu.uj.sk.btcg.bpmn.BpmnQueries;
 import com.edu.uj.sk.btcg.bpmn.BpmnUtil;
 import com.edu.uj.sk.btcg.collections.CCollections;
 import com.edu.uj.sk.btcg.generation.generators.IGenerator;
-import com.edu.uj.sk.btcg.logic.VariableValueExtractor;
+import com.edu.uj.sk.btcg.logic.VariableValueExtractorFromBpmnModel;
 import com.edu.uj.sk.btcg.scripting.GroovyEvaluator;
 import com.google.common.base.Preconditions;
-import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Multimap;
 
 public class CoverageByInputManipulation implements IGenerator {
-	private VariableValueExtractor variableValueExtractor = VariableValueExtractor.create();
+	private VariableValueExtractorFromBpmnModel 
+	variableValueExtractor = VariableValueExtractorFromBpmnModel.create();
 
+	
 	@Override
 	public Iterator<BpmnModel> generate(BpmnModel originalModel) {
 		return new It(originalModel);
@@ -38,187 +47,204 @@ public class CoverageByInputManipulation implements IGenerator {
 
 	
 	private class It extends AbstractGenerationIterator {
-		// Map<UserTask Id, Map<Variable Name, Index>
-		private Map<String, Map<String, Integer>> userTaskToVariableIndexMap = new HashMap<>();
-		private List<List<Object>> allVariablesValuesPermutations;
+		// Map<FlowElement Id, Map<Variable Name, Index>
+		private Map<String, Map<String, Integer>> idVariableIndexMap = new HashMap<>();
+		private List<List<Object>> allValueCombinations;
 		
 		
 		public It(BpmnModel originalModel) {
 			super(originalModel);
 			
-			Map<String, Multimap<String, Object>> userTaskVariableValueMap = new HashMap<>();
+			Map<String, Multimap<String, Object>>
+			userTaskVariableValueMap = variableValueExtractor.extract(originalModel);
 			
-			Stack<Pair<FlowElement, UserTask>> contexts = new Stack<>(); 
-			contexts.add(Pair.of(selectStartEvent(originalModel), null));
-			
-			while (!contexts.isEmpty()) {
-				Pair<FlowElement, UserTask> context = contexts.pop();
-				FlowElement element = context.getKey();
-				UserTask currentUserTask = context.getValue();
-				
-				
-				
-				if (element instanceof UserTask) {
-					UserTask userTask = (UserTask)element;
-					
-					Multimap<String, Object> variableValueMap = HashMultimap.create();
-					
-					if (currentUserTask != null) {
-						variableValueMap = HashMultimap.create(
-							userTaskVariableValueMap.get(currentUserTask.getId())
-						);
-					}
-						
-					userTaskVariableValueMap
-						.put(userTask.getId(), variableValueMap);
-					
-					currentUserTask = userTask;
-					
-				} else if (element instanceof SequenceFlow) {
-					SequenceFlow sequenceFlow = (SequenceFlow) element;
-					
-					if (currentUserTask != null && !StringUtils.isBlank(sequenceFlow.getConditionExpression())) {
-						String userTaskId = currentUserTask.getId();
-						
-						
-						Multimap<String, Object> variableValueMap = 
-							variableValueExtractor
-								.extractVariableValueMap(sequenceFlow.getConditionExpression());
-						
-							userTaskVariableValueMap
-								.get(userTaskId)
-								.putAll(variableValueMap);
-						
-					}
-					
-					FlowElement target = originalModel.getFlowElement(sequenceFlow.getTargetRef());
-					contexts.push(Pair.of(target, currentUserTask));
-					
-					continue;
-				}
-				
-				if (element instanceof FlowNode) {
-					FlowNode flowNode = (FlowNode) element;
-					
-					for (SequenceFlow sequenceFlow : flowNode.getOutgoingFlows()) {
-						contexts.push(Pair.of(sequenceFlow, currentUserTask));
-					}
-				}
-			}
-			
-			
-			
-			
-			List<Collection<Object>> values = Lists.newArrayList();
-			
-			for (String userTask : userTaskVariableValueMap.keySet()) {
-				Multimap<String, Object> variableValuesMap = userTaskVariableValueMap.get(userTask);
-				Map<String, Integer> variableIndexMap = new HashMap<>();
-				
-				for (String variable : variableValuesMap.keySet()) {
-					Integer index = values.size();
-					values.add(new ArrayList<Object>(variableValuesMap.get(variable)));
-					
-					variableIndexMap.put(variable, index);
-				}
-				
-				
-				userTaskToVariableIndexMap.put(userTask, variableIndexMap);
-			}
-			
-			allVariablesValuesPermutations = CCollections.allCombinations(values);
+			calculateIndexAndValuesCombination(userTaskVariableValueMap);
 		}
+
 
 
 		@Override
 		public boolean hasNext() {
-			return !allVariablesValuesPermutations.isEmpty();
+			return !allValueCombinations.isEmpty();
 		}
 
+		
 		@Override
 		public BpmnModel next() {
 			BpmnModel currentTestCase = BpmnUtil.clone(originalModel);
-			Map<FlowElement, Boolean> visitedElements = new HashMap<>();
+			List<Object> currentValuesCombination = allValueCombinations.remove(0);
 			
-			List<Object> currentVariablesValues = allVariablesValuesPermutations.remove(0);
+			Traverser traverser = new Traverser(currentValuesCombination);
 			
-			Stack<Context> contexts = new Stack<>();
-			contexts.push(new Context(selectStartEvent(currentTestCase)));
+			traverser.traverse(currentTestCase);
 			
-			while (!contexts.isEmpty()) {
-				Context context = contexts.pop();
+			removeUnconnectedElements(currentTestCase);
+			return currentTestCase;
+		}
+		
+		
+		
+		
+		private class Traverser extends BpmnGraphTraversal<Traverser.Context> {
+			private String elementIdToSkip = "";
+			private Context currentContext;
+			private List<Object> currentValuesCombination;
+			
+			public Traverser(List<Object> valuesCombinationMap) {
+				currentValuesCombination = valuesCombinationMap;
+			}
+			
+			@Override
+			protected void doProcessing(Context context, BpmnModel model) {
+				elementIdToSkip = "";
+				currentContext = context;
 				
-				if (visitedElements.containsKey(context.element)) continue;
-				visitedElements.put(context.element, Boolean.TRUE);
 				
-				
-				if (context.element instanceof UserTask) {
-					UserTask userTask = (UserTask)context.element;
+				if (isVariableModifier(context.element)) {
+					overrideCurrentVariableValues(context, context.element);
 					
-					Map<String, Object> variableValueMap = getInputFor(userTask, currentVariablesValues);
-
-					// override current values
-					context.variableValueMap.putAll(variableValueMap);
-					
-					if (!userTask.getFormProperties().isEmpty()) {
-						String text = createAnnotationTextForUserTask(userTask, variableValueMap);
-						createAnnotationForElement(currentTestCase, text, userTask);
-					}
+					annotateWithCurrentInputChanges
+						(model, context.element, context.variableValueMap);
 					
 				} else if (context.element instanceof SequenceFlow) {
 					SequenceFlow sequenceFlow = (SequenceFlow)context.element;
 					
 					String condition = sequenceFlow.getConditionExpression();
 					
+					if (StringUtils.isBlank(condition)) return;
+					
+					
 					Boolean conditionValue = true;
-					if (!StringUtils.isBlank(condition)) {
-						try {
-							conditionValue = (Boolean)GroovyEvaluator
-									.evaluate(condition, context.variableValueMap);
-							
-						} catch (Throwable e) {
-							conditionValue = false;
-							FlowElement element = 
-									currentTestCase.getFlowElement(sequenceFlow.getSourceRef());
-							
-							createAnnotationForElement(currentTestCase, "Exception: " + e.getMessage(), element);
-						}
+					try {
+						conditionValue = (Boolean)
+							GroovyEvaluator.evaluate(condition, context.variableValueMap);
+						
+					} catch (Throwable e) {
+						conditionValue = false;
+						annotateWithException(model, sequenceFlow, e);
 					}
 					
-					if (!conditionValue) {
-						removeSequenceFlow(currentTestCase, sequenceFlow);
-					} else {
-						FlowElement element = currentTestCase.getFlowElement(sequenceFlow.getTargetRef());
-						contexts.push(new Context(element, context.variableValueMap));
+					if (conditionValue == null || !conditionValue) {
+						removeSequenceFlow(model, sequenceFlow);
+						elementIdToSkip = sequenceFlow.getTargetRef();
 					}
-					
-					continue;
 				} 
 				
-				if (context.element instanceof FlowNode) {
-					FlowNode flowNode = (FlowNode) context.element;
-					
-					for (SequenceFlow sequenceFlow : flowNode.getOutgoingFlows()) {
-						contexts.push(new Context(sequenceFlow, context.variableValueMap));
-					}
+			}
+
+
+
+			@Override
+			protected Optional<Context> getInitialContext(BpmnModel model) {
+				StartEvent startEvent = selectStartEvent(model);
+				
+				return Optional.of(new Context(startEvent));
+			}
+			
+			
+
+			@Override
+			protected Optional<Context> getContext(FlowElement element,
+					BpmnModel model) {
+				
+				Context context = new Context(element, currentContext.variableValueMap);
+				
+				if (isConnectionToSkip(element)) 
+					return Optional.empty();
+				
+				return Optional.of(context);
+			}
+			
+			
+			private boolean isConnectionToSkip(FlowElement element) {
+				return elementIdToSkip.equals(element.getId());
+			}
+
+			
+			private boolean isVariableModifier(FlowElement element) {
+				if (element instanceof Task) return true;
+				if (element instanceof StartEvent) return true;
+				if (element instanceof IntermediateCatchEvent) return true;
+				
+				return false;
+			}
+
+			
+			private void annotateWithCurrentInputChanges(
+				BpmnModel model, 
+				FlowElement element, 
+				Map<String, Object> variableValueMap) {
+				
+				List<String> variables = getModifiedVariables(model, element);
+				
+				if (variables.isEmpty()) return;
+				
+				String text = createAnnotationText(variables, variableValueMap);
+				
+				createAnnotationForElement(model, text, element);
+			}
+
+			
+			private void annotateWithException(
+					BpmnModel model,
+					SequenceFlow sequenceFlow, 
+					Throwable e) {
+				
+				FlowElement element = model.getFlowElement(sequenceFlow.getSourceRef());
+				
+				createAnnotationForElement(model, "Exception: " + e.getMessage(), element);
+			}
+			
+			
+			private void 
+			overrideCurrentVariableValues(Context context, FlowElement element) {
+				Map<String, Object> variableValueMap = 
+					getCurrentVariableValuesContext(element, currentValuesCombination);
+
+				context.variableValueMap.putAll(variableValueMap);
+			}
+			
+			
+			
+			
+
+			private class Context implements BpmnGraphTraversal.IContext {
+				public FlowElement element;
+				public Map<String, Object> variableValueMap = new HashMap<>();
+				
+				
+				public Context(FlowElement element) {
+					this.element = element;
+				}
+				
+				
+				public Context(FlowElement element,
+						Map<String, Object> variablesValues) {
+					this.element = element;
+					this.variableValueMap = new HashMap<>(variablesValues);
+				}
+
+				
+				@Override
+				public FlowElement getCurrentElement() {
+					return element;
 				}
 			}
 			
-			removeUnconnectedElements(currentTestCase);
-			return currentTestCase;
 		}
+		
+		
 
 		
 		
 		
-		private Map<String, Object> getInputFor(
-				UserTask userTask,
-				List<Object> currentVariablesValues) {
+		private Map<String, Object> getCurrentVariableValuesContext(
+				FlowElement element, List<Object> currentVariablesValues) {
 			
 			Map<String, Object> variableValueMap = new HashMap<>();
 			
 			Map<String, Integer> variableIndexMap = 
-					userTaskToVariableIndexMap.get(userTask.getId());			
+					idVariableIndexMap.get(element.getId());			
 					
 			for (String variable : variableIndexMap.keySet()) {
 				Integer index = variableIndexMap.get(variable);
@@ -233,13 +259,49 @@ public class CoverageByInputManipulation implements IGenerator {
 		
 		
 		private StartEvent selectStartEvent(BpmnModel currentTestCase) {
-			List<StartEvent> startEvents = selectAllMainProcessFlowElementsOfType(currentTestCase, StartEvent.class);
+			List<StartEvent> startEvents = BpmnQueries.selectAllOfType(currentTestCase, StartEvent.class);
 			
 			Preconditions.checkArgument(!startEvents.isEmpty());
 			
 			return startEvents.get(0);
 		}
 		
+		
+		
+		
+		
+		
+		/**
+		 * create list of variable values and then calculate all combinations 
+		 * (@allVariablesValuesPermutations)
+		 * create also index (@userTaskToVariableIndexMap) 
+		 * which will tell you at what index in given combination
+		 * value y is stored for variable x
+		 * 
+		 * 
+		 * @param idVariableValueMap
+		 */
+		private void calculateIndexAndValuesCombination(
+				Map<String, Multimap<String, Object>> idVariableValueMap) {
+			
+			List<Collection<Object>> values = Lists.newArrayList();
+			
+			for (String id : idVariableValueMap.keySet()) {
+				Multimap<String, Object> variableValuesMap = idVariableValueMap.get(id);
+				Map<String, Integer> variableIndexMap = new HashMap<>();
+				
+				for (String variable : variableValuesMap.keySet()) {
+					Integer index = values.size();
+					
+					values.add(variableValuesMap.get(variable));
+					variableIndexMap.put(variable, index);
+				}
+				
+				idVariableIndexMap.put(id, variableIndexMap);
+			}
+			
+			allValueCombinations = CCollections.allCombinations(values);
+		}
 		
 		
 		
@@ -256,90 +318,67 @@ public class CoverageByInputManipulation implements IGenerator {
 		 * @param annotationText
 		 * @return
 		 */
-		private String createAnnotationTextForUserTask(
-				UserTask userTask,
+		private String createAnnotationText(
+				List<String> variables,
 				Map<String, Object> variableValueMap) {
-			
+
 			StringBuilder annotationText = new StringBuilder("User submits variables:    ");
-			List<FormProperty> formProperties = userTask.getFormProperties();
 			
-			for (String variable : variableValueMap.keySet()) {
-				if (formContainsVariable(formProperties, variable)) {
-					annotationText
-						.append(variable)
-						.append(" = <")
-						.append(variableValueMap.get(variable))
-						.append(">,   ");
-				}
+			for (String variable : variables) {
+				if (!variableValueMap.containsKey(variable)) continue;
+				
+				Object value = variableValueMap.get(variable);
+				
+				annotationText
+					.append(variable)
+					.append(" = <")
+					.append(value)
+					.append(">,   ");
 			}
 			
 			return annotationText.toString();
 		}
-		
-		
-		/**
-		 * Check if given list of ExtensionElement's (input form @formProperties)
-		 * contains input for variable with name @variable
-		 * 
-		 * @param formProperties
-		 * @param variable
-		 * @return
-		 */
-		private boolean formContainsVariable(
-				List<FormProperty> formProperties, String variable) {
+
+
+
+		private List<String> getModifiedVariables(BpmnModel model, FlowElement element) {
+			List<String> variables = Lists.newArrayList();
 			
-			for (FormProperty property : formProperties) {
-				if (property.getName().equals(variable)) return true;
+			if (element instanceof Event) {
+				Event startEvent = (Event) element;
+				
+				for (EventDefinition ed : startEvent.getEventDefinitions()) {
+					if (ed instanceof MessageEventDefinition) {
+						MessageEventDefinition message = (MessageEventDefinition) ed;
+						
+						Message msg = model.getMessage(message.getMessageRef());
+						variables.add(msg.getName());
+					}
+				};
+			} else if (element instanceof UserTask) {
+				UserTask userTask = (UserTask) element;
+				
+				for (FormProperty property : userTask.getFormProperties()) {
+					variables.add(property.getName());
+				}
+			} else if (element instanceof ScriptTask) {
+				ScriptTask task = (ScriptTask) element;
+				
+				String script = task.getScript();
+				if (StringUtils.isBlank(script)) return variables;
+				
+				Pattern variablePattern = Pattern.compile("[A-Z]\\w*\\s+([a-z]\\w*)(;|\\s)");
+				Matcher variableMatcher = variablePattern.matcher(script);
+				
+				while (variableMatcher.find()) {
+					String variable = variableMatcher.group(1);
+					variables.add(variable);
+				}
 			}
 			
-			return false;
-		}
-		
-		
-		
-
-		
-		
-		
-		
-		
-		class Context {
-			public Context(FlowElement element) {
-				this.element = element;
-			}
-			
-			
-			
-			public Context(FlowElement element,
-					Map<String, Object> variablesValues) {
-				this.element = element;
-				this.variableValueMap = new HashMap<>(variablesValues);
-			}
-
-
-
-			public FlowElement element;
-			public Map<String, Object> variableValueMap = new HashMap<>();
-		}
+			return variables;
+		}		
 		
 	}
-
-
-	
-	
-	
-	
-	public VariableValueExtractor getVariableValueExtractor() {
-		return variableValueExtractor;
-	}
-
-
-	public void setVariableValueExtractor(
-			VariableValueExtractor variableValueExtractor) {
-		this.variableValueExtractor = variableValueExtractor;
-	}
-	
-	
-	
 	
 }

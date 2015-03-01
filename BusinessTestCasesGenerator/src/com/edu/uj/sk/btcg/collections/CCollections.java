@@ -5,13 +5,16 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
 import com.google.common.base.Optional;
 import com.google.common.base.Predicate;
 import com.google.common.collect.Collections2;
+import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Lists;
+import com.google.common.collect.Multimap;
 
 public class CCollections {
 	public static <T> Optional<T> find(Collection<T> collection, Predicate<? super T> predicate) {
@@ -75,6 +78,9 @@ public class CCollections {
 	
 	
 	public static <T> List<List<T>> allCombinations(List<Collection<T>> collections) {
+		if (collections == null) return Lists.newArrayList();
+		if (collections.isEmpty()) return Lists.newArrayList();
+		
 		List<List<T>> result = Lists.newArrayList();
 		int[] indexes = new int[collections.size()];
 		
@@ -106,5 +112,30 @@ public class CCollections {
 		}
 		
 		return result;
+	}
+	
+	
+	
+	
+	/**
+	 * Update map with Multimap values
+	 * if @map does not contains value for @key then
+	 * pair (@key, @value) is inserted to the @map
+	 * otherwise value under @key and new multimap @value
+	 * are merged together and stored under @key in @map
+	 * 
+	 * @param map
+	 * @param key
+	 * @param value
+	 * @return updated @map
+	 */
+	public static <A, B, C> Map<A, Multimap<B, C>> updateMap
+		(Map<A, Multimap<B, C>> map, A key, Multimap<B, C> value) {
+		
+			Multimap<B, C> v = map.getOrDefault(key, HashMultimap.create());
+			v.putAll(value);
+			map.put(key, v);
+			
+			return map;
 	}
 }

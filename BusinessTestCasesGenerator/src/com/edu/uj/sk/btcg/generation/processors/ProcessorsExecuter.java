@@ -7,7 +7,6 @@ import org.activiti.bpmn.model.BpmnModel;
 import com.edu.uj.sk.btcg.bpmn.BpmnUtil;
 import com.edu.uj.sk.btcg.generation.generators.impl.CorruptedIncomingMessageGenerator;
 import com.edu.uj.sk.btcg.generation.generators.impl.CorruptedOutgoingMessageGenerator;
-import com.edu.uj.sk.btcg.generation.generators.impl.CoverageByConditionEvaluationNaive;
 import com.edu.uj.sk.btcg.generation.generators.impl.CoverageByInputManipulation;
 import com.edu.uj.sk.btcg.generation.generators.impl.SimpleCoverageGenerator;
 import com.edu.uj.sk.btcg.logging.CLogger;
@@ -23,12 +22,12 @@ public class ProcessorsExecuter {
 		processors.add(new Processor("simple_coverage", new SimpleCoverageGenerator()));
 		processors.add(new Processor("corrupted_incoming_message", new CorruptedIncomingMessageGenerator()));
 		processors.add(new Processor("corrupted_outgoing_message", new CorruptedOutgoingMessageGenerator()));
-		processors.add(new Processor("coverage_by_condition_evaluation_naive", new CoverageByConditionEvaluationNaive()));
 		processors.add(new Processor("coverage_by_input_manipulation", new CoverageByInputManipulation()));
 		processors.add(new MergingProcessor("all_strategies_at_once", Lists.newArrayList(
 			new SimpleCoverageGenerator(),
 			new CorruptedIncomingMessageGenerator(),
-			new CorruptedOutgoingMessageGenerator()
+			new CorruptedOutgoingMessageGenerator(),
+			new CoverageByInputManipulation()
 		)));
 	}
 	

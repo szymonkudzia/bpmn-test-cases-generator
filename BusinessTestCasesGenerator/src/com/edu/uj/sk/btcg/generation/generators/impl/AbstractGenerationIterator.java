@@ -135,22 +135,6 @@ abstract class AbstractGenerationIterator implements Iterator<BpmnModel> {
 		return result;
 	}
 	
-	/**
-	 * Select all flow elements of main process in given model
-	 * 
-	 * @param model
-	 * @return
-	 */
-	protected List<FlowElement> selectAllFlowElemntsOfMainProcess(BpmnModel model) {
-		return model.getMainProcess().getFlowElements().stream().collect(Collectors.toList());
-	}
-	
-	protected <T> List<T> selectAllMainProcessFlowElementsOfType(BpmnModel model, Class<T> clazz) {
-		return selectAllFlowElemntsOfMainProcess(model).stream()
-				.filter(x -> clazz.isAssignableFrom(x.getClass()))
-				.map(x -> clazz.cast(x))
-				.collect(Collectors.toList());
-	}
 	
 	
 	/**
@@ -192,7 +176,21 @@ abstract class AbstractGenerationIterator implements Iterator<BpmnModel> {
 
 
 	private int computeAnnotationHeight(String text) {
-		return text.length() / 17 * 25;
+		final int CHARACTERS_NUMBER_PER_LINE = 14;
+		
+		int currentLineLen = 0;
+		int lineCount = 1;
+		for (String word : text.split("\\s")) {
+			currentLineLen += word.length() + 1;
+			
+			if (currentLineLen > CHARACTERS_NUMBER_PER_LINE) {
+				currentLineLen = 0;
+				++lineCount; 
+			}
+			
+		}
+		
+		return lineCount * 25;
 	}
 	
 	

@@ -8,6 +8,7 @@ import org.activiti.bpmn.model.BpmnModel;
 import org.activiti.bpmn.model.IntermediateCatchEvent;
 import org.activiti.bpmn.model.MessageEventDefinition;
 
+import com.edu.uj.sk.btcg.bpmn.BpmnQueries;
 import com.edu.uj.sk.btcg.bpmn.BpmnUtil;
 import com.edu.uj.sk.btcg.collections.CCollections;
 import com.edu.uj.sk.btcg.generation.generators.IGenerator;
@@ -55,7 +56,7 @@ public class CorruptedIncomingMessageGenerator implements IGenerator {
 		private List<IntermediateCatchEvent> selectIncominvMessagesEvents(
 				BpmnModel model) {
 			
-			return selectAllMainProcessFlowElementsOfType(model, IntermediateCatchEvent.class)
+			return BpmnQueries.selectAllOfType(model, IntermediateCatchEvent.class)
 					.stream()
 					.filter(x -> 
 						!x.getEventDefinitions().isEmpty() 
