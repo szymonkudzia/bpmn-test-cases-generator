@@ -13,7 +13,6 @@ import com.google.common.collect.Maps;
 
 public abstract class BpmnGraphTraversal<T extends BpmnGraphTraversal.IContext> {
 	public void traverse(BpmnModel model) {
-		Map<String, String> visited = Maps.newHashMap();
 		Stack<T> contexts = new Stack<>();
 		
 		
@@ -27,8 +26,8 @@ public abstract class BpmnGraphTraversal<T extends BpmnGraphTraversal.IContext> 
 			T context = contexts.pop();
 			FlowElement element = context.getCurrentElement();
 			
-			if (wasVisited(visited, element)) continue;
-			markAsVisited(visited, element);
+			if (wasVisited(context, element)) continue;
+			markAsVisited(context, element);
 			
 			
 			doProcessing(context, model);
@@ -50,21 +49,9 @@ public abstract class BpmnGraphTraversal<T extends BpmnGraphTraversal.IContext> 
 	}
 	
 	
-	
-	
-	
-	
-	
 
-	private void markAsVisited(Map<String, String> visited, FlowElement element) {
-		visited.put(element.getId(), null);
-	}
-
-
-
-	private boolean wasVisited(Map<String, String> visited, FlowElement element) {
-		return visited.containsKey(element.getId());
-	}
+	protected abstract void markAsVisited(T context, FlowElement element);
+	protected abstract boolean wasVisited(T context, FlowElement element);
 	
 	
 	

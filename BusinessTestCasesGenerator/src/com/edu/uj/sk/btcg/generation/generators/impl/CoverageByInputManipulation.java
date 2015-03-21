@@ -24,7 +24,7 @@ import org.activiti.bpmn.model.Task;
 import org.activiti.bpmn.model.UserTask;
 import org.apache.commons.lang.StringUtils;
 
-import com.edu.uj.sk.btcg.bpmn.BpmnGraphTraversal;
+import com.edu.uj.sk.btcg.bpmn.BpmnGraphTraversalWithDefaultElementMarking;
 import com.edu.uj.sk.btcg.bpmn.BpmnQueries;
 import com.edu.uj.sk.btcg.bpmn.BpmnUtil;
 import com.edu.uj.sk.btcg.collections.CCollections;
@@ -85,7 +85,7 @@ public class CoverageByInputManipulation implements IGenerator {
 		
 		
 		
-		private class Traverser extends BpmnGraphTraversal<Traverser.Context> {
+		private class Traverser extends BpmnGraphTraversalWithDefaultElementMarking<Traverser.Context> {
 			private String elementIdToSkip = "";
 			private Context currentContext;
 			private List<Object> currentValuesCombination;
@@ -181,7 +181,8 @@ public class CoverageByInputManipulation implements IGenerator {
 				
 				String text = createAnnotationText(variables, variableValueMap);
 				
-				createAnnotationForElement(model, text, element);
+				if (!StringUtils.isBlank(text))
+					createAnnotationForElement(model, text, element);
 			}
 
 			
@@ -208,7 +209,7 @@ public class CoverageByInputManipulation implements IGenerator {
 			
 			
 
-			private class Context implements BpmnGraphTraversal.IContext {
+			private class Context implements BpmnGraphTraversalWithDefaultElementMarking.IContext {
 				public FlowElement element;
 				public Map<String, Object> variableValueMap = new HashMap<>();
 				
@@ -322,10 +323,14 @@ public class CoverageByInputManipulation implements IGenerator {
 				List<String> variables,
 				Map<String, Object> variableValueMap) {
 
-			StringBuilder annotationText = new StringBuilder("User submits variables:    ");
+			StringBuilder annotationText = new StringBuilder();
 			
 			for (String variable : variables) {
 				if (!variableValueMap.containsKey(variable)) continue;
+				
+				if (annotationText.length() <= 0)
+					annotationText.append("User submits variables:    ");
+
 				
 				Object value = variableValueMap.get(variable);
 				

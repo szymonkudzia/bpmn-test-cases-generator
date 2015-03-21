@@ -176,10 +176,10 @@ abstract class AbstractGenerationIterator implements Iterator<BpmnModel> {
 
 
 	private int computeAnnotationHeight(String text) {
-		final int CHARACTERS_NUMBER_PER_LINE = 14;
+		final int CHARACTERS_NUMBER_PER_LINE = 11;
 		
 		int currentLineLen = 0;
-		int lineCount = 1;
+		int lineCount = 2;
 		for (String word : text.split("\\s")) {
 			currentLineLen += word.length() + 1;
 			

@@ -73,31 +73,24 @@ public class VariableValueExtractorFromCondition extends AbstractVariableValueEx
 	}
 	
 	private void determinaBoundaryValues(HashMultimap<String, Object> possibleValues, Optional<BooleanExpressionNode> node) {
-		while (node.isPresent()) {
-			if (tokenizer.isVarialbe(node.get().getLeft())) {
-				getBoundaryValues(
-						possibleValues, 
-						node.get().getLeft().get().getValue(), 
-						node.get().getValue(), 
-						node.get().getRight());
-				
-				node = node.get().getRight();
-				
-			} else if (tokenizer.isVarialbe(node.get().getRight())) {
-				getBoundaryValues(
-						possibleValues, 
-						node.get().getRight().get().getValue(), 
-						node.get().getValue(), 
-						node.get().getLeft());
-				
-				node = node.get().getLeft();
-			} else {
-				determinaBoundaryValues(possibleValues, node.get().getLeft());
-				determinaBoundaryValues(possibleValues, node.get().getRight());
-				
-				node = Optional.empty();
-			}
-		}
+		if (!node.isPresent()) return;
+		
+		Optional<BooleanExpressionNode> left = node.get().getLeft();
+		Optional<BooleanExpressionNode> right = node.get().getRight();
+			
+		getBoundaryValues(
+				possibleValues, 
+				left, 
+				node.get().getValue(), 
+				right);
+		
+		
+		if (left.isPresent() && tokenizer.isOperator(left.get().getValue()))
+				determinaBoundaryValues(possibleValues, left);
+		
+		if (right.isPresent() && tokenizer.isOperator(right.get().getValue()))
+			determinaBoundaryValues(possibleValues, right);
+		
 	}
 	
 	
@@ -107,41 +100,70 @@ public class VariableValueExtractorFromCondition extends AbstractVariableValueEx
 	 * Get possible values of variables used in connection condition
 	 * 
 	 * @param possibleValues
-	 * @param variable
-	 * @param operator
-	 * @param sibling
+	 * @param left
+	 * @param current
+	 * @param right
 	 */
 	private void getBoundaryValues(
 			HashMultimap<String, Object> possibleValues,
-			String variable, 
-			String operator,
-			Optional<BooleanExpressionNode> sibling) {
+			Optional<BooleanExpressionNode> left, 
+			String current,
+			Optional<BooleanExpressionNode> right) {
 
-		if (Lists.newArrayList("!").contains(operator)) {
+		if (hasNoChilds(left, right) || isBooleanOperator(current)) {
+			String variable = current;
+			
+			if (left.isPresent()) variable = left.get().getValue();
+			if (right.isPresent()) variable = right.get().getValue();
+			
 			possibleValues.put(variable, Boolean.TRUE);
 			possibleValues.put(variable, Boolean.FALSE);
 			possibleValues.put(variable, null);
-		} else {
-			String value = sibling.get().getValue();
-			
-			if (tokenizer.isOperator(sibling.get().getValue())) {
-				// TODO evaluate sibling
-			}
-			
-			if (tokenizer.isNumber(value)) {
-				Double dval = Double.parseDouble(value);
-				
-				possibleValues.put(variable, dval + 1);
-				possibleValues.put(variable, dval);
-				possibleValues.put(variable, dval - 1);
-				possibleValues.put(variable, null);
-			} else {
-				possibleValues.put(variable, value.replaceAll("\"", ""));
-				possibleValues.put(variable, "");
-				possibleValues.put(variable, null);
-			}
 			
 		}
+		
+		if (!right.isPresent() || !left.isPresent())
+			return;
+
+		
+		String variable = left.get().getValue();
+		String value = right.get().getValue();
+		
+		if (tokenizer.isVariable(value)) {
+			variable = value;
+			value = left.get().getValue();
+		}
+		
+		
+		if (tokenizer.isOperator(value)) {
+			// TODO evaluate sibling
+		} else if (tokenizer.isVariable(value)) {
+			// TODO what to do if we encounter variable?
+			
+		} else if (tokenizer.isNumber(value)) {
+			Double dval = Double.parseDouble(value);
+			
+			possibleValues.put(variable, dval + 1);
+			possibleValues.put(variable, dval);
+			possibleValues.put(variable, dval - 1);
+			possibleValues.put(variable, null);
+		} else {
+			possibleValues.put(variable, value.replaceAll("\"", ""));
+			possibleValues.put(variable, "");
+			possibleValues.put(variable, null);
+		}
+	}
+
+
+	private boolean isBooleanOperator(String current) {
+		return Lists.newArrayList("!", "&&", "||").contains(current);
+	}
+
+
+	private boolean hasNoChilds(
+			Optional<BooleanExpressionNode> left,
+			Optional<BooleanExpressionNode> sibling) {
+		return !(left.isPresent() || sibling.isPresent());
 	}
 
 	

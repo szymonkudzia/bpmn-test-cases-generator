@@ -34,6 +34,12 @@ public class CCollections {
 	
 	
 	
+	/**
+	 * Perform given action (@processor) on each item in collection
+	 * 
+	 * @param collection
+	 * @param processor
+	 */
 	public static <T> void each(Collection<T> collection, Predicate<? super T> processor) {
 		for (T element : collection) {
 			processor.apply(element);
@@ -42,13 +48,27 @@ public class CCollections {
 	
 	
 	
+	
+	/**
+	 * Perform given action (@processor) on each item in array
+	 * 
+	 * @param collection
+	 * @param processor
+	 */
 	public static <T> void each(T[] array, Predicate<? super T> processor) {
 		each(Arrays.asList(array), processor);
 	}
 	
 	
 	
-	
+	/**
+	 * Return power set of given collection
+	 * Example
+	 * 	powerSet([1 2 3]) = [[], [1], [2], [3], [1, 2], [1, 3], [2, 3]]
+	 * 
+	 * @param originalCollection
+	 * @return not null list of sets
+	 */
 	public static <T> List<List<T>> powerSet(Collection<T> originalCollection) {
 		Set<Set<T>> powerSet = powerSet(new HashSet<T>(originalCollection));
 		
@@ -77,6 +97,15 @@ public class CCollections {
 	}
 	
 	
+	
+	/**
+	 * Returns all combination of given collection
+	 * Example
+	 * 	allCombinations([[1, 2], [3, 4]]) = [[1, 3], [1, 4], [2, 3], [2, 4]]
+	 * 
+	 * @param collections
+	 * @return not null list of all combinations
+	 */
 	public static <T> List<List<T>> allCombinations(List<Collection<T>> collections) {
 		if (collections == null) return Lists.newArrayList();
 		if (collections.isEmpty()) return Lists.newArrayList();

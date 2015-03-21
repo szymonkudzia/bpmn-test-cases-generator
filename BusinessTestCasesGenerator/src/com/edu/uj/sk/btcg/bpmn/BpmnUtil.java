@@ -14,12 +14,26 @@ import com.edu.uj.sk.btcg.logging.CLogger;
 public class BpmnUtil {
 	private static final CLogger logger = CLogger.getLogger(BpmnUtil.class);
 	
+	/**
+	 * Make independent copy of given @model
+	 * 
+	 * @param model
+	 * @return copy of @model
+	 */
 	public static BpmnModel clone(BpmnModel model) {
 		String xml = toString(model);
 		
 		return toBpmnModel(xml);
 	}
 	
+	
+	
+	/**
+	 * Conver given model to xml
+	 * 
+	 * @param model
+	 * @return xml
+	 */
 	public static String toString(BpmnModel model) {
 		BpmnXMLConverter converter = new BpmnXMLConverter();
 		String content;
@@ -34,6 +48,13 @@ public class BpmnUtil {
 	}
 	
 
+	
+	/**
+	 * Parese xml and return BpmnModel structure
+	 * 
+	 * @param bpmnModelContent
+	 * @return
+	 */
 	public static BpmnModel toBpmnModel(String bpmnModelContent) {
 		BpmnXMLConverter converter = new BpmnXMLConverter();
 		XMLInputFactory xmlInputFactory = XMLInputFactory.newInstance();

@@ -11,7 +11,7 @@ import org.activiti.bpmn.model.IntermediateCatchEvent;
 import org.activiti.bpmn.model.StartEvent;
 import org.activiti.bpmn.model.Task;
 
-import com.edu.uj.sk.btcg.bpmn.BpmnGraphTraversal;
+import com.edu.uj.sk.btcg.bpmn.BpmnGraphTraversalWithDefaultElementMarking;
 import com.edu.uj.sk.btcg.bpmn.BpmnQueries;
 import com.edu.uj.sk.btcg.collections.CCollections;
 import com.edu.uj.sk.btcg.logic.extractors.VariableValueExtractor;
@@ -40,7 +40,7 @@ public class VariableValueExtractorFromBpmnModel {
 	
 	
 	
-	private class Traverser extends BpmnGraphTraversal<Context> {
+	private class Traverser extends BpmnGraphTraversalWithDefaultElementMarking<Context> {
 		private static final String NO_START_EVENT_MSG = "There is no start event defined!";
 		
 		private Map<String, Multimap<String, Object>> flowElementIdVariableValueMap = new HashMap<>();
@@ -112,7 +112,7 @@ public class VariableValueExtractorFromBpmnModel {
 	
 	
 	
-	private class Context implements BpmnGraphTraversal.IContext {
+	private class Context implements BpmnGraphTraversalWithDefaultElementMarking.IContext {
 		public FlowElement currentElement;
 		public FlowElement variableModifier;
 		
