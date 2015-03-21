@@ -168,7 +168,7 @@ abstract class AbstractGenerationIterator implements Iterator<BpmnModel> {
 		GraphicInfo graphicInfo = new GraphicInfo();
 		graphicInfo.setX(eventGraphicInfo.getX());
 		graphicInfo.setY(eventGraphicInfo.getY() - height - 50);
-		graphicInfo.setWidth(100);
+		graphicInfo.setWidth(300);
 		graphicInfo.setHeight(height);
 		
 		model.addGraphicInfo(textAnnotation.getId(), graphicInfo);
@@ -176,18 +176,28 @@ abstract class AbstractGenerationIterator implements Iterator<BpmnModel> {
 
 
 	private int computeAnnotationHeight(String text) {
-		final int CHARACTERS_NUMBER_PER_LINE = 11;
+		final int CHARACTERS_NUMBER_PER_LINE = 66;
 		
-		int currentLineLen = 0;
-		int lineCount = 2;
-		for (String word : text.split("\\s")) {
-			currentLineLen += word.length() + 1;
+		int lineCount = 0;
+		
+		// split each line
+		for (String line : text.split("\n")) {
+			int currentLineLen = 0;
+			lineCount++;
 			
-			if (currentLineLen > CHARACTERS_NUMBER_PER_LINE) {
-				currentLineLen = 0;
-				++lineCount; 
+			// check if text of current line fits in
+			// line width
+			// if not then tell us how many new lines it takes?
+			for (String word : line.split("\\s")) {
+				int currentWordLen = word.length() + 1;
+				currentLineLen += currentWordLen;
+				
+				if (currentLineLen > CHARACTERS_NUMBER_PER_LINE) {
+					currentLineLen = currentWordLen;
+					++lineCount; 
+				}
+				
 			}
-			
 		}
 		
 		return lineCount * 25;
