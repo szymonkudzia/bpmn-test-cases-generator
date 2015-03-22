@@ -10,6 +10,7 @@ import com.edu.uj.sk.btcg.generation.generators.impl.CorruptedIncomingMessageGen
 import com.edu.uj.sk.btcg.generation.generators.impl.CorruptedOutgoingMessageGenerator;
 import com.edu.uj.sk.btcg.generation.generators.impl.CoverageByInputManipulation;
 import com.edu.uj.sk.btcg.generation.generators.impl.CoverageByPaths;
+import com.edu.uj.sk.btcg.generation.generators.impl.ExceptionInScriptServiceTaskGenerator;
 import com.edu.uj.sk.btcg.generation.generators.impl.SimpleCoverageGenerator;
 import com.edu.uj.sk.btcg.generation.generators.impl.UserTaskCasesGenerator;
 import com.edu.uj.sk.btcg.logging.CLogger;
@@ -29,6 +30,7 @@ public class ProcessorsExecuter {
 		processors.add(new Processor("coverage_by_paths", new CoverageByPaths(), true));
 		processors.add(new Processor("manual_tasks", new UserTaskCasesGenerator()));
 		processors.add(new Processor("broken_parallel_tasks", new BrokenIncomingFlowsToParallelGatewayGenerator()));
+		processors.add(new Processor("script_service_tasts_interrupted", new ExceptionInScriptServiceTaskGenerator()));
 		
 //		processors.add(new MergingProcessor("all_strategies_at_once", Lists.newArrayList(
 //			new SimpleCoverageGenerator(),
