@@ -13,11 +13,19 @@ public class Processor implements IProcessor{
 	
 	private IGenerator generator;
 	private String processorName;
+	private boolean preserveDuplications;
 	
 	public Processor(String processorName, IGenerator generator) {
+		this(processorName, generator, false);
+	}
+	
+	
+	public Processor(String processorName, IGenerator generator, boolean preserveDuplications) {
 		this.generator = generator;
 		this.processorName = processorName;
+		this.preserveDuplications = preserveDuplications;
 	}
+	
 	
 	@Override
 	public void process(BpmnModel model, TestCasePersister persister) throws Exception {
@@ -27,7 +35,7 @@ public class Processor implements IProcessor{
 		while (iterator.hasNext()) {
 			BpmnModel newTestCase = iterator.next();
 			
-			persister.persist(processorName, newTestCase);
+			persister.persist(processorName, newTestCase, preserveDuplications);
 		}
 		
 		logger.info("Processor [%s] finished", processorName);

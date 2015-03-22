@@ -54,7 +54,7 @@ public class BrokenIncomingFlowsToParallelGatewayGenerator implements IGenerator
 			FlowElement target = currentTestCase.getFlowElement(currentConnection.getTargetRef());
 			
 			createAnnotationForElement(currentTestCase, "If this task fails", source);
-			createAnnotationForElement(currentTestCase, "This gate which waits for all incoming flows will wait forever!!!", target);
+			createAnnotationForElement(currentTestCase, "Then this gate which waits for all incoming flows will wait forever!!!", target);
 			
 			createAnnotationForConnection(currentConnection);
 			

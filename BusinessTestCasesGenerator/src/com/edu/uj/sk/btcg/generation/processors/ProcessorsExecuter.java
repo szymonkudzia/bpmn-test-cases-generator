@@ -6,7 +6,11 @@ import org.activiti.bpmn.model.BpmnModel;
 
 import com.edu.uj.sk.btcg.bpmn.BpmnUtil;
 import com.edu.uj.sk.btcg.generation.generators.impl.BrokenIncomingFlowsToParallelGatewayGenerator;
+import com.edu.uj.sk.btcg.generation.generators.impl.CorruptedIncomingMessageGenerator;
+import com.edu.uj.sk.btcg.generation.generators.impl.CorruptedOutgoingMessageGenerator;
+import com.edu.uj.sk.btcg.generation.generators.impl.CoverageByInputManipulation;
 import com.edu.uj.sk.btcg.generation.generators.impl.CoverageByPaths;
+import com.edu.uj.sk.btcg.generation.generators.impl.SimpleCoverageGenerator;
 import com.edu.uj.sk.btcg.generation.generators.impl.UserTaskCasesGenerator;
 import com.edu.uj.sk.btcg.logging.CLogger;
 import com.edu.uj.sk.btcg.persistance.TestCasePersister;
@@ -18,11 +22,11 @@ public class ProcessorsExecuter {
 	private static List<IProcessor> processors = Lists.newArrayList();
 	
 	static {
-//		processors.add(new Processor("simple_coverage", new SimpleCoverageGenerator()));
-//		processors.add(new Processor("corrupted_incoming_message", new CorruptedIncomingMessageGenerator()));
-//		processors.add(new Processor("corrupted_outgoing_message", new CorruptedOutgoingMessageGenerator()));
-//		processors.add(new Processor("coverage_by_input_manipulation", new CoverageByInputManipulation()));
-		processors.add(new Processor("coverage_by_paths", new CoverageByPaths()));
+		processors.add(new Processor("simple_coverage", new SimpleCoverageGenerator()));
+		processors.add(new Processor("corrupted_incoming_message", new CorruptedIncomingMessageGenerator()));
+		processors.add(new Processor("corrupted_outgoing_message", new CorruptedOutgoingMessageGenerator()));
+		processors.add(new Processor("coverage_by_input_manipulation", new CoverageByInputManipulation()));
+		processors.add(new Processor("coverage_by_paths", new CoverageByPaths(), true));
 		processors.add(new Processor("manual_tasks", new UserTaskCasesGenerator()));
 		processors.add(new Processor("broken_parallel_tasks", new BrokenIncomingFlowsToParallelGatewayGenerator()));
 		

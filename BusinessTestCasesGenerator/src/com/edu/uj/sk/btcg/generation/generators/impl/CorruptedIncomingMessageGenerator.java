@@ -15,7 +15,17 @@ import com.edu.uj.sk.btcg.generation.generators.IGenerator;
 import com.google.common.collect.Lists;
 
 public class CorruptedIncomingMessageGenerator implements IGenerator {
-	private static final String ANNOTATION_TEXT = "Message is corrupted !!!";
+	private static final String ANNOTATION_TEXT = "Message:\n\n"
+			+ "1. Was never sent.\n\n"
+			+ "  a. Connection is down.\n\n"
+			+ "  b. Proxy was not configured properly.\n\n"
+			+ "2. Has incorrect format.\n\n"
+			+ "3. Has correct format but contains incorrect data.\n\n"
+			+ "4. Holds data for different entity (but correct data).\n\n"
+			+ "5. Timeout before receiving message\n\n"
+			+ "6. Sender takes lot of time to sent it.\n\n"
+			+ "7. Data has poor quality.\n\n"
+			;
 	
 	@Override
 	public Iterator<BpmnModel> generate(BpmnModel originalModel) {

@@ -29,10 +29,17 @@ public class TestCasePersister {
 	
 	
 	public void persist(String namespace, BpmnModel model) throws IOException {
+		persist(namespace, model, false);
+	}
+
+	
+	public void persist(String namespace, BpmnModel model, boolean preserveDuplications) throws IOException {
 		String content = BpmnUtil.toString(model);
 
-		if (modelNotUnique(content)) return;
-		registerModelAsUsed(content);
+		if (!preserveDuplications) {
+			if (modelNotUnique(content)) return;
+			registerModelAsUsed(content);
+		}
 		
 		File destination = determineModelDestination(namespace);
 		saveOutput(destination, content);
