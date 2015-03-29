@@ -3,6 +3,7 @@ package com.edu.uj.sk.btcg.generation;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.List;
 
 import org.activiti.bpmn.model.BpmnModel;
 import org.apache.commons.io.FileUtils;
@@ -17,10 +18,13 @@ import org.eclipse.core.runtime.IAdaptable;
 import org.eclipse.jface.dialogs.MessageDialog;
 import org.eclipse.jface.viewers.ISelection;
 import org.eclipse.jface.viewers.IStructuredSelection;
+import org.eclipse.jface.window.Window;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.ui.handlers.HandlerUtil;
 
 import com.edu.uj.sk.btcg.bpmn.BpmnUtil;
+import com.edu.uj.sk.btcg.generation.processors.IProcessor;
+import com.edu.uj.sk.btcg.generation.processors.ProcessorsExecuter;
 import com.edu.uj.sk.btcg.logging.CLogger;
 import com.edu.uj.sk.btcg.persistance.TestCasePersister;
 
@@ -35,11 +39,8 @@ import com.edu.uj.sk.btcg.persistance.TestCasePersister;
 public class GenerateTestCasesHandler extends AbstractHandler {
 	private static final CLogger logger = CLogger.getLogger(GenerateTestCasesHandler.class);
 	
-	private TestCasesGenerator testCasesGenerator;
-	
 	
 	public GenerateTestCasesHandler() {
-		testCasesGenerator = new TestCasesGenerator();
 	}
 	
 	@Override
@@ -52,9 +53,13 @@ public class GenerateTestCasesHandler extends AbstractHandler {
 	    Object firstElement = selection.getFirstElement();
 	    
 	    if (isSupportedFile(firstElement)) {
+	    	GenerationStrategyPickerDialog dialog = new GenerationStrategyPickerDialog(shell);
+	    	if (dialog.open() == Window.CANCEL) return null;
+	    	
+	    	
 	    	IFile modelToProcess = castToIFile(firstElement);
 	    	
-	    	processFile(shell, modelToProcess);
+	    	processFile(shell, dialog.getChosenProcessors(), dialog.asSingleStrategy(), modelToProcess);
 
 	    	refreshPackageExplorer(modelToProcess);
 	    	
@@ -75,7 +80,7 @@ public class GenerateTestCasesHandler extends AbstractHandler {
 	
 	
 	
-	private void processFile(Shell shell, IFile modelToProcess) {
+	private void processFile(Shell shell, List<IProcessor> processors, boolean asSingleStrategy, IFile modelToProcess) {
 		try {
 			String modelXml = IOUtils.toString(modelToProcess.getContents());
 			BpmnModel bpmnModel = BpmnUtil.toBpmnModel(modelXml);
@@ -97,7 +102,7 @@ public class GenerateTestCasesHandler extends AbstractHandler {
 			
 			TestCasePersister persistTestCase = new TestCasePersister(outputDirectory);
 			
-			testCasesGenerator.generate(bpmnModel, persistTestCase);
+			ProcessorsExecuter.process(processors, asSingleStrategy, bpmnModel, persistTestCase);
 			
 			showInformationAboutFinishedGeneration(shell);
 			

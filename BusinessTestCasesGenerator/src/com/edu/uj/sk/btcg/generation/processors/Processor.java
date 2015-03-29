@@ -41,4 +41,9 @@ public class Processor implements IProcessor{
 		logger.info("Processor [%s] finished", processorName);
 	}
 
+
+	public IGenerator getGenerator() {
+		return generator;
+	}
+
 }

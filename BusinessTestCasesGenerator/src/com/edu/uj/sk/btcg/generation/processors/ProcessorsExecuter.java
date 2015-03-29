@@ -1,18 +1,12 @@
 package com.edu.uj.sk.btcg.generation.processors;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.activiti.bpmn.model.BpmnModel;
 
 import com.edu.uj.sk.btcg.bpmn.BpmnUtil;
-import com.edu.uj.sk.btcg.generation.generators.impl.BrokenIncomingFlowsToParallelGatewayGenerator;
-import com.edu.uj.sk.btcg.generation.generators.impl.CorruptedIncomingMessageGenerator;
-import com.edu.uj.sk.btcg.generation.generators.impl.CorruptedOutgoingMessageGenerator;
-import com.edu.uj.sk.btcg.generation.generators.impl.CoverageByInputManipulation;
-import com.edu.uj.sk.btcg.generation.generators.impl.CoverageByPaths;
-import com.edu.uj.sk.btcg.generation.generators.impl.ExceptionInScriptServiceTaskGenerator;
-import com.edu.uj.sk.btcg.generation.generators.impl.SimpleCoverageGenerator;
-import com.edu.uj.sk.btcg.generation.generators.impl.UserTaskCasesGenerator;
+import com.edu.uj.sk.btcg.generation.generators.IGenerator;
 import com.edu.uj.sk.btcg.logging.CLogger;
 import com.edu.uj.sk.btcg.persistance.TestCasePersister;
 import com.google.common.collect.Lists;
@@ -20,28 +14,16 @@ import com.google.common.collect.Lists;
 public class ProcessorsExecuter {
 	private static CLogger logger = CLogger.getLogger(ProcessorsExecuter.class);
 	
-	private static List<IProcessor> processors = Lists.newArrayList();
 	
-	static {
-		processors.add(new Processor("simple_coverage", new SimpleCoverageGenerator()));
-		processors.add(new Processor("corrupted_incoming_message", new CorruptedIncomingMessageGenerator()));
-		processors.add(new Processor("corrupted_outgoing_message", new CorruptedOutgoingMessageGenerator()));
-		processors.add(new Processor("coverage_by_input_manipulation", new CoverageByInputManipulation()));
-		processors.add(new Processor("coverage_by_paths", new CoverageByPaths(), true));
-		processors.add(new Processor("manual_tasks", new UserTaskCasesGenerator()));
-		processors.add(new Processor("broken_parallel_tasks", new BrokenIncomingFlowsToParallelGatewayGenerator()));
-		processors.add(new Processor("script_service_tasts_interrupted", new ExceptionInScriptServiceTaskGenerator()));
+	public static void process(final List<IProcessor> processors, final boolean asSingleStrategy, final BpmnModel model, final TestCasePersister persister) {
+		List<IProcessor> p = Lists.newArrayList(processors);
 		
-//		processors.add(new MergingProcessor("all_strategies_at_once", Lists.newArrayList(
-//			new SimpleCoverageGenerator(),
-//			new CorruptedIncomingMessageGenerator(),
-//			new CorruptedOutgoingMessageGenerator(),
-//			new CoverageByInputManipulation()
-//		)));
-	}
-	
-	public static void process(final BpmnModel model, final TestCasePersister persister) {
-		for (IProcessor processor : processors) {
+		if (asSingleStrategy) {
+			p = combineAsSingleStrategy(processors);
+		}
+		
+		
+		for (IProcessor processor : p) {
 			final BpmnModel copy = BpmnUtil.clone(model);
 			
 			try {
@@ -51,5 +33,23 @@ public class ProcessorsExecuter {
 				logger.warn("Processor: [%s] finished with exception!", e, processor.getClass().getName());
 			}
 		}
+	}
+
+	
+
+	private static List<IProcessor> combineAsSingleStrategy(final List<IProcessor> processors) {
+		List<IGenerator> generators = extractGeneratorsList(processors);
+		
+		return Lists.newArrayList(new MergingProcessor("all_combined", generators));
+	}
+
+
+	
+	private static List<IGenerator> extractGeneratorsList(final List<IProcessor> processors) {
+		return processors
+				.stream()
+				.filter(a -> a instanceof Processor)
+				.map(a -> ((Processor)a).getGenerator())
+				.collect(Collectors.toList());
 	}
 }
