@@ -24,9 +24,11 @@ import org.eclipse.ui.handlers.HandlerUtil;
 
 import com.edu.uj.sk.btcg.bpmn.BpmnUtil;
 import com.edu.uj.sk.btcg.generation.processors.IProcessor;
+import com.edu.uj.sk.btcg.generation.processors.ProcessingStats;
 import com.edu.uj.sk.btcg.generation.processors.ProcessorsExecuter;
 import com.edu.uj.sk.btcg.logging.CLogger;
 import com.edu.uj.sk.btcg.persistance.TestCasePersister;
+import com.google.common.collect.Lists;
 
 
 /**
@@ -102,9 +104,16 @@ public class GenerateTestCasesHandler extends AbstractHandler {
 			
 			TestCasePersister persistTestCase = new TestCasePersister(outputDirectory);
 			
-			ProcessorsExecuter.process(processors, asSingleStrategy, bpmnModel, persistTestCase);
+			List<ProcessingStats> stats =
+					ProcessorsExecuter.process(processors, asSingleStrategy, bpmnModel, persistTestCase);
 			
-			showInformationAboutFinishedGeneration(shell);
+			List<ProcessingStats> uncombinedStrategiesStats = Lists.newArrayList();
+			
+			if (asSingleStrategy) 
+				uncombinedStrategiesStats = 
+					ProcessorsExecuter.process(processors, false, bpmnModel, falsePersister());
+			
+			showInformationAboutFinishedGeneration(shell, stats, uncombinedStrategiesStats);
 			
 		} catch (IOException | CoreException e) {
 			logger.warn("Execption during test cases generations!", e);
@@ -157,13 +166,14 @@ public class GenerateTestCasesHandler extends AbstractHandler {
 	}
 	
 	
-	private void showInformationAboutFinishedGeneration(Shell shell) {
-		MessageDialog
-      	.openInformation(
-    		  shell, 
-    		  "Info",
-    		  "Generation finished successfully!");
+	private void showInformationAboutFinishedGeneration(
+			Shell shell, 
+			List<ProcessingStats> stats, 
+			List<ProcessingStats> uncombinedStrategiesStats) {
+		
+		new StatsPresentationDialog(shell, stats, uncombinedStrategiesStats).open();
 	}
+	
 	
 	private void shwoInformationAboutGeneralError(Shell shell) {
 		MessageDialog
@@ -210,4 +220,19 @@ public class GenerateTestCasesHandler extends AbstractHandler {
 		return new File(path);
 	}
 
+	
+	private TestCasePersister falsePersister() {
+		try {
+			return new TestCasePersister(null) {
+				@Override
+				public void persist(String namespace, BpmnModel model,
+						boolean preserveDuplications) throws IOException {
+				}
+				
+			};
+			
+		} catch (IOException e) {
+			return null; // will never happen
+		}
+	}
 }

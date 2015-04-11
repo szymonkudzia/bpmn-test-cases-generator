@@ -1,13 +1,16 @@
 package com.edu.uj.sk.btcg.generation.generators.impl;
 
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.activiti.bpmn.model.BpmnModel;
 import org.activiti.bpmn.model.EndEvent;
-import org.activiti.bpmn.model.ExclusiveGateway;
 import org.activiti.bpmn.model.FlowElement;
 import org.activiti.bpmn.model.SequenceFlow;
 import org.activiti.bpmn.model.StartEvent;
@@ -16,6 +19,7 @@ import com.edu.uj.sk.btcg.bpmn.BpmnGraphTraversal;
 import com.edu.uj.sk.btcg.bpmn.BpmnGraphTraversalWithDefaultElementMarking;
 import com.edu.uj.sk.btcg.bpmn.BpmnQueries;
 import com.edu.uj.sk.btcg.bpmn.BpmnUtil;
+import com.edu.uj.sk.btcg.collections.CCollections;
 import com.edu.uj.sk.btcg.generation.generators.IGenerator;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
@@ -37,27 +41,80 @@ public class CoverageByPaths implements IGenerator {
 
 	
 	private class It extends AbstractGenerationIterator {
-		private List<String> notUsedConnectionsIds = Lists.newArrayList();
-		
+		private List<List<SequenceFlow>> testPaths = Lists.newArrayList();
 		
 		public It(BpmnModel originalModel) {
 			super(originalModel);
+
 			
-			List<ExclusiveGateway> gateways =
-					BpmnQueries.selectAllOfType(originalModel, ExclusiveGateway.class);
+			Traverser traverser = new Traverser();			
+			traverser.traverse(originalModel);
+
+			List<List<SequenceFlow>> allPaths = traverser.getPaths();
+			List<List<SequenceFlow>> kConnectionsTuples = calculateAllKTuples(allPaths);
 			
-			for (ExclusiveGateway gateway : gateways) {
-				for (SequenceFlow connection : gateway.getOutgoingFlows()) {
-					notUsedConnectionsIds.add(connection.getId());
+			
+			int currentBestCoverage = Integer.MAX_VALUE;
+			for (List<List<SequenceFlow>> paths : CCollections.powerSet(allPaths)) {
+				if (paths.size() > currentBestCoverage) continue;
+				
+				if (coversAllPaths(paths, kConnectionsTuples)) {
+					currentBestCoverage = paths.size();
+					testPaths = paths;
 				}
 			}
 		}
 
 
 
+		private List<List<SequenceFlow>> calculateAllKTuples(
+				List<List<SequenceFlow>> allPaths) {
+			
+			Set<List<SequenceFlow>> uniqueTuples = new HashSet<>();
+			
+			for (List<SequenceFlow> path : allPaths) {
+				for (int i = 0; i < path.size() - kNearestDecisionNodes + 1; ++i) {
+					uniqueTuples.add(path.subList(i, i + kNearestDecisionNodes));
+				}
+			}
+			
+			return Lists.newArrayList(uniqueTuples);
+		}
+
+
+
+		/**
+		 * Check if source paths covers all paths in target.
+		 * If all paths from target are sublists of one or more paths from source.
+		 * 
+		 * @param source
+		 * @param target
+		 * @return
+		 */
+		private boolean coversAllPaths(
+			List<List<SequenceFlow>> source, 
+			List<List<SequenceFlow>> target) {
+			
+			int covered = 0;
+			for(List<SequenceFlow> tuple : target) {
+				for (List<SequenceFlow> path : source) {
+					if (path.size() < tuple.size()) continue;
+					
+					if (Collections.indexOfSubList(path, tuple) >= 0) {
+						++covered;
+						break;
+					}
+				}
+			}
+			
+			return covered == target.size();
+		}
+
+
+
 		@Override
 		public boolean hasNext() {
-			return !notUsedConnectionsIds.isEmpty();
+			return !testPaths.isEmpty();
 		}
 
 		
@@ -65,27 +122,21 @@ public class CoverageByPaths implements IGenerator {
 		public BpmnModel next() {
 			BpmnModel currentTestCase = BpmnUtil.clone(originalModel);		
 			
+			List<SequenceFlow> path = testPaths.remove(0);
+			List<String> pathIds = path.stream().map(p -> p.getId()).collect(Collectors.toList());
 			
-			Traverser traverser = new Traverser();
+			List<SequenceFlow> connections = BpmnQueries
+					.selectAllOfType(currentTestCase, SequenceFlow.class);
 			
-			traverser.traverse(currentTestCase);
+			List<SequenceFlow> toRemove = Lists.newArrayList();
 			
-			List<SequenceFlow> path = traverser.getPath();
-			
-			for (SequenceFlow connection : path) {
-				notUsedConnectionsIds.remove(connection.getId());
-				
-				String sourceRef = connection.getSourceRef();
-				ExclusiveGateway gateway = 
-					(ExclusiveGateway) currentTestCase.getFlowElement(sourceRef);
-				
-				List<SequenceFlow> toRemove = Lists.newArrayList(gateway.getOutgoingFlows());
-				toRemove.remove(connection);
-				
-				for (SequenceFlow tr : toRemove) 
-					removeSequenceFlow(currentTestCase, tr);
+			for (SequenceFlow connection : connections) {
+				if (!pathIds.contains(connection.getId()))
+					toRemove.add(connection);				
 			}
 			
+			for (SequenceFlow tr : toRemove) 
+				removeSequenceFlow(currentTestCase, tr);
 			
 			removeUnconnectedElements(currentTestCase);
 			
@@ -97,13 +148,10 @@ public class CoverageByPaths implements IGenerator {
 		
 		private class Traverser extends BpmnGraphTraversal<Traverser.Context> {
 			private Context currentContext;
-
-			private int maxNewConnectionsCount = 0;
-			private int longestPathLength = 0;
-			private List<SequenceFlow> connectionsInPath = Lists.newArrayList();
+			private List<List<SequenceFlow>> paths = Lists.newArrayList();
 			
-			public List<SequenceFlow> getPath() {
-				return connectionsInPath;
+			public List<List<SequenceFlow>> getPaths() {
+				return paths;
 			}
 			
 			
@@ -113,27 +161,7 @@ public class CoverageByPaths implements IGenerator {
 				FlowElement element = context.getCurrentElement();
 				
 				if (element instanceof EndEvent) {
-					int newConnectionsCount = 0;
-					
-					for (SequenceFlow c : currentContext.getPath()) {
-						if (notUsedConnectionsIds.contains(c.getId())) {
-							++newConnectionsCount;
-						}
-					}
-
-					if (newConnectionsCount > maxNewConnectionsCount) {
-						maxNewConnectionsCount = newConnectionsCount;
-						longestPathLength = currentContext.getPathLength();
-						connectionsInPath = currentContext.getPath();
-						
-					}/* else if (currentContext.getPathLength() > longestPathLength) {
-						boolean containsUnusedConnection = newConnectionsCount > 0;
-						
-						if (containsUnusedConnection) {
-							longestPathLength = currentContext.getPathLength();
-							connectionsInPath = currentContext.getPath();
-						}
-					}*/
+					paths.add(context.getPath());
 				}				
 			}
 
@@ -155,19 +183,12 @@ public class CoverageByPaths implements IGenerator {
 				List<SequenceFlow> path = Lists.newArrayList(currentContext.getPath());
 				
 				if (element instanceof SequenceFlow) {
-					SequenceFlow connection = (SequenceFlow) element;
-					
-					FlowElement sourceElement = model.getFlowElement(connection.getSourceRef());
-					
-					if (sourceElement instanceof ExclusiveGateway) {
-						path.add(connection);
-					}
+					path.add((SequenceFlow) element);
 				}
 				
 				
 				Context context = new Context(
 					element, 
-					currentContext.getPathLength() + 1, 
 					path,
 					currentContext.visited);
 											
@@ -192,7 +213,6 @@ public class CoverageByPaths implements IGenerator {
 
 			private class Context implements BpmnGraphTraversalWithDefaultElementMarking.IContext {
 				public FlowElement element;
-				public int length = 0;
 				public List<SequenceFlow> connections = Lists.newArrayList();
 				public Map<String, FlowElement> visited = Maps.newHashMap();
 				
@@ -203,12 +223,10 @@ public class CoverageByPaths implements IGenerator {
 				
 				public Context(
 						FlowElement element, 
-						int length, 
 						List<SequenceFlow> connections,
 						Map<String, FlowElement> visited) {
 					
 					this.element = element;
-					this.length = length;
 					this.connections = Lists.newArrayList(connections);
 					this.visited = Maps.newHashMap(visited);
 				}
@@ -231,9 +249,6 @@ public class CoverageByPaths implements IGenerator {
 					return element;
 				}
 				
-				public int getPathLength() {
-					return length;
-				}
 			}
 		}
 		
