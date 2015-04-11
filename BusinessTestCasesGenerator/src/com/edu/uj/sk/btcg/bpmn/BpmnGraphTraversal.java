@@ -77,6 +77,9 @@ public abstract class BpmnGraphTraversal<T extends BpmnGraphTraversal.IContext> 
 			FlowElement targetElement = 
 					model.getFlowElement(sequenceFlow.getTargetRef());
 			
+			if (targetElement == null)
+				return;
+			
 			Optional<T> context = getContext(targetElement, model);
 			
 			if (context.isPresent())

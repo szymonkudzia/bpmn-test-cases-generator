@@ -14,11 +14,11 @@ public class MergingProcessor implements IProcessor {
 	private String processorName;
 	
 	public MergingProcessor(String processorName, List<IGenerator> generators) {
-		this.generators = generators;
-		this.processorName = processorName;
-		
 		Preconditions.checkNotNull(generators);
 		Preconditions.checkArgument(!generators.isEmpty());
+
+		this.generators = generators;
+		this.processorName = processorName;
 	}
 	
 	

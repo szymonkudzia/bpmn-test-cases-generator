@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.function.Consumer;
 
 import org.eclipse.jface.dialogs.Dialog;
+import org.eclipse.jface.dialogs.MessageDialog;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.custom.ScrolledComposite;
 import org.eclipse.swt.events.SelectionEvent;
@@ -28,20 +29,23 @@ public class GenerationStrategyPickerDialog extends Dialog {
 	private Composite container;
 	private List<IProcessor> chosenProcessors = new ArrayList<IProcessor>();
 	
-	boolean asSingle = false;
-	Button asSingleOne;
+	private boolean asSingle = false;
+	private Button asSingleOne;
 	
-	Button naiveEdgeCoverage;
-	Button manualTask;
-	Button retrivingInfoFailed;
-	Button exceptionInScriptServiceTask;
-	Button hasRights;
-	Button coverageByUniquePaths;
-	Button coverageByInputManipulation;
-	Button corruptedOutgoingMessages;
-	Button corruptedIncomingMessages;
-	Button brokenIncomingFlowsToParallelGateway;
-	Button artifactGenerationFailed;
+	private Button naiveEdgeCoverage;
+	private Button manualTask;
+	private Button retrivingInfoFailed;
+	private Button exceptionInScriptServiceTask;
+	private Button hasRights;
+	private Button coverageByUniquePaths;
+	private Button coverageByInputManipulation;
+	private Button corruptedOutgoingMessages;
+	private Button corruptedIncomingMessages;
+	private Button brokenIncomingFlowsToParallelGateway;
+	private Button artifactGenerationFailed;
+	
+	
+	private Text kInput;
 	
 	
 	public List<IProcessor> getChosenProcessors() {
@@ -101,16 +105,16 @@ public class GenerationStrategyPickerDialog extends Dialog {
 		Label l = new Label(c, SWT.LEFT);
 		l.setText("k: ");
 
-		Text text = new Text(c, SWT.BORDER);
-		text.setEnabled(false);
-		text.setText("1");
-		text.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+		kInput = new Text(c, SWT.BORDER);
+		kInput.setEnabled(false);
+		kInput.setText("1");
+		kInput.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
 		
 		coverageByUniquePaths.addSelectionListener(selectHandler(e -> {
 			if (coverageByUniquePaths.getSelection()) {
-				text.setEnabled(true);
+				kInput.setEnabled(true);
 			} else {
-				text.setEnabled(false);
+				kInput.setEnabled(false);
 			}
 		}));
 		
@@ -161,6 +165,18 @@ public class GenerationStrategyPickerDialog extends Dialog {
 
 	@Override
 	protected void okPressed() {
+		int k = 1;
+		
+		if (kInput.isEnabled()) {
+			try {
+				k = Integer.parseInt(kInput.getText());
+				if (k <= 0) throw new IllegalArgumentException();
+				
+			} catch (Throwable e) {
+				MessageDialog.openError(getParentShell(), "Error", "K is not valid number! Only Integers greater than 0 are acceptable.");
+				return;
+			}
+		}
 		
 		if (naiveEdgeCoverage.getSelection())
 			chosenProcessors.add(Processors.newNaiveCoverage());
@@ -182,7 +198,7 @@ public class GenerationStrategyPickerDialog extends Dialog {
 			chosenProcessors.add(Processors.newHasRights());
 		
 		if (coverageByUniquePaths.getSelection())
-			chosenProcessors.add(Processors.newCoverageByUniquePaths());
+			chosenProcessors.add(Processors.newCoverageByUniquePaths(k));
 		
 		
 		if (coverageByInputManipulation.getSelection())

@@ -33,8 +33,8 @@ public class Processors {
 	}
 	
 	
-	public static IProcessor newCoverageByUniquePaths() {
-		return new Processor("coverage_by_paths", new CoverageByPaths(), true);
+	public static IProcessor newCoverageByUniquePaths(int kNearestDecisionNodes) {
+		return new Processor("coverage_by_paths", new CoverageByPaths(kNearestDecisionNodes), true);
 	}
 	
 	

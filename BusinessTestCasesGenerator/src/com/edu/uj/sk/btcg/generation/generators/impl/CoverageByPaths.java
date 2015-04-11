@@ -22,8 +22,14 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 
 public class CoverageByPaths implements IGenerator {
+	private int kNearestDecisionNodes = 1;
 
 	
+	public CoverageByPaths(int kNearestDecisionNodes) {
+		this.kNearestDecisionNodes = kNearestDecisionNodes;
+	}
+
+
 	@Override
 	public Iterator<BpmnModel> generate(BpmnModel originalModel) {
 		return new It(originalModel);
