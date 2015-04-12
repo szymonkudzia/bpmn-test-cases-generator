@@ -4,6 +4,7 @@ package com.edu.uj.sk.btcg.generation;
 import java.io.File;
 import java.io.IOException;
 import java.util.List;
+import java.util.Map;
 
 import org.activiti.bpmn.model.BpmnModel;
 import org.apache.commons.io.FileUtils;
@@ -24,11 +25,12 @@ import org.eclipse.ui.handlers.HandlerUtil;
 
 import com.edu.uj.sk.btcg.bpmn.BpmnUtil;
 import com.edu.uj.sk.btcg.generation.processors.IProcessor;
-import com.edu.uj.sk.btcg.generation.processors.Stats;
 import com.edu.uj.sk.btcg.generation.processors.ProcessorsExecuter;
+import com.edu.uj.sk.btcg.generation.processors.Stats;
 import com.edu.uj.sk.btcg.logging.CLogger;
 import com.edu.uj.sk.btcg.persistance.TestCasePersister;
 import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
 
 
 /**
@@ -87,47 +89,91 @@ public class GenerateTestCasesHandler extends AbstractHandler {
 			String modelXml = IOUtils.toString(modelToProcess.getContents());
 			BpmnModel bpmnModel = BpmnUtil.toBpmnModel(modelXml);
 			
-			File outputDirectory = new File(castToFile(modelToProcess).getAbsolutePath() + "_test_cases");
-			
-			if (outputDirectory.exists()) {
-				boolean overwrite = askIfOverwriteTestCases(shell, outputDirectory);
-				
-				if (!overwrite) {
-					return;
-				} else {
-					FileUtils.deleteDirectory(outputDirectory);
-					refreshPackageExplorer(modelToProcess);
-				}
-			}
-			
-			outputDirectory.mkdirs();
+			File outputDirectory = prepareOutputDirectory(shell, modelToProcess);
 			
 			TestCasePersister persistTestCase = new TestCasePersister(outputDirectory);
-			
 			ProcessorsExecuter.process(processors, asSingleStrategy, bpmnModel, persistTestCase);
 			
+			List<Stats> stats = persistTestCase.getStats();
 			List<Stats> uncombinedStrategiesStats = Lists.newArrayList();
 			
 			if (asSingleStrategy) {
-				TestCasePersister justCounting = justCountingPersister();
-				ProcessorsExecuter.process(processors, false, bpmnModel, justCounting);
+				if (stats.isEmpty()) 
+					stats.add(new Stats("all_combined", 0, 0));
 				
-				uncombinedStrategiesStats = justCounting.getStats(); 
-			}
+				uncombinedStrategiesStats = 
+						calculateCountsForUncombinedStrategies(processors, bpmnModel); 
+			} else {
+				addUncountedProcessors(processors, stats);
+			}	
 			
-			showInformationAboutFinishedGeneration(shell, persistTestCase.getStats(), uncombinedStrategiesStats);
+			showInformationAboutFinishedGeneration(shell, stats, uncombinedStrategiesStats);
 			
+		} catch (SkipTCGeneration e) {
+			// skip generation => no exception
 		} catch (IOException | CoreException e) {
 			logger.warn("Execption during test cases generations!", e);
 			showInformationAboutBrokenFile(shell);
 			
-		} catch (Throwable e) {
+		} catch (Exception e) {
 			logger.warn("Exception during test cases generations!", e);
 			shwoInformationAboutGeneralError(shell);
 		}
 	}
+	
 
+	private File prepareOutputDirectory(Shell shell, IFile modelToProcess)
+			throws IOException, ExecutionException, SkipTCGeneration {
+		File outputDirectory = new File(castToFile(modelToProcess).getAbsolutePath() + "_test_cases");
+		
+		if (outputDirectory.exists()) {
+			boolean overwrite = askIfOverwriteTestCases(shell, outputDirectory);
+			
+			if (!overwrite) {
+				throw new SkipTCGeneration();
+				
+			} else {
+				FileUtils.deleteDirectory(outputDirectory);
+				refreshPackageExplorer(modelToProcess);
+			}
+		}
+		
+		outputDirectory.mkdirs();
+		return outputDirectory;
+	}
 
+	@SuppressWarnings("serial")
+	class SkipTCGeneration extends Exception {};
+	
+	
+	private List<Stats> calculateCountsForUncombinedStrategies(
+			List<IProcessor> processors, BpmnModel bpmnModel) {
+		List<Stats> uncombinedStrategiesStats;
+		TestCasePersister justCounting = justCountingPersister();
+		ProcessorsExecuter.process(processors, false, bpmnModel, justCounting);
+		
+		uncombinedStrategiesStats = justCounting.getStats();
+		
+		addUncountedProcessors(processors, uncombinedStrategiesStats);
+		
+		return uncombinedStrategiesStats;
+	}
+	
+	
+	private void addUncountedProcessors(List<IProcessor> processors, List<Stats> stats) {
+		Map<String, Void> countedProcessors = Maps.newHashMap();
+		
+		stats.forEach(s -> countedProcessors.put(s.getName(), null));
+		
+		for (IProcessor processor : processors) {
+			if (!countedProcessors.containsKey(processor.getName())) {
+				stats.add(new Stats(processor.getName(), 0, 0));
+			}
+		}
+	}
+	
+
+	
 
 
 

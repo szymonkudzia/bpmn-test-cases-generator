@@ -65,6 +65,13 @@ public class MergingProcessor implements IProcessor {
 		}else {
 			generateTestCases(model, persister, generators.get(0), generators.subList(1, generators.size()));
 		}
+	}
+
+
+	@Override
+	public String getName() {
+		return processorName;
 	}	
 
+	
 }

@@ -49,4 +49,10 @@ public class Processor implements IProcessor{
 		return generator;
 	}
 
+
+	@Override
+	public String getName() {
+		return processorName;
+	}
+
 }

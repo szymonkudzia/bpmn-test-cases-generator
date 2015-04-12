@@ -149,15 +149,15 @@ abstract class AbstractGenerationIterator implements Iterator<BpmnModel> {
 			String annotationText,
 			FlowElement e) {
 		
-		FlowElement event = getFlowElement(model, e);
-		GraphicInfo eventGraphicInfo = getGraphicInfo(model, e);
+		FlowElement element = getFlowElement(model, e);
+		GraphicInfo elementGraphicInfo = getGraphicInfo(model, e);
 		
 		TextAnnotation textAnnotation = new TextAnnotation();
-		textAnnotation.setId(event.getId() + "_textAnnotation");
+		textAnnotation.setId(element.getId() + "_textAnnotation");
 		textAnnotation.setText(annotationText);
 		
 		Association association = new Association();
-		association.setSourceRef(event.getId());
+		association.setSourceRef(element.getId());
 		association.setTargetRef(textAnnotation.getId());
 		
 		model.getMainProcess().addArtifact(textAnnotation);
@@ -166,8 +166,8 @@ abstract class AbstractGenerationIterator implements Iterator<BpmnModel> {
 		int height = computeAnnotationHeight(annotationText);
 		
 		GraphicInfo graphicInfo = new GraphicInfo();
-		graphicInfo.setX(eventGraphicInfo.getX());
-		graphicInfo.setY(eventGraphicInfo.getY() - height - 50);
+		graphicInfo.setX(elementGraphicInfo.getX());
+		graphicInfo.setY(elementGraphicInfo.getY() - height - 50);
 		graphicInfo.setWidth(300);
 		graphicInfo.setHeight(height);
 		
@@ -235,9 +235,30 @@ class FlowElementsRemover {
 				for (SequenceFlow sequenceFlow : flowNode.getIncomingFlows()) {
 					ConnectionRemover.removeSequenceFlow(model, sequenceFlow);
 				}
+				
+				List<Association> associationsToRemove = Lists.newArrayList();
+				List<String> annotationsIds =				
+					model.getMainProcess().getArtifacts().stream()
+						.filter(a -> a instanceof Association)
+						.map(a -> (Association) a)
+						.filter(a -> a.getSourceRef().equals(element.getId()))
+						.map(a -> {
+							associationsToRemove.add(a);
+							
+							return a.getTargetRef();
+						})
+						.collect(Collectors.toList());
+				
+				for (String annotationId : annotationsIds) { 
+					model.getMainProcess().removeArtifact(annotationId);
+					model.removeGraphicInfo(annotationId);
+				}
+				
+				model.getMainProcess().getArtifacts().removeAll(associationsToRemove);
 			}
 		}
 		
+			
 		model.getMainProcess().getFlowElements().removeAll(toBeRemoved);
 		
 		for (FlowElement flowElement : toBeRemoved)
