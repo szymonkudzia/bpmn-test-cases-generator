@@ -24,7 +24,7 @@ import org.eclipse.ui.handlers.HandlerUtil;
 
 import com.edu.uj.sk.btcg.bpmn.BpmnUtil;
 import com.edu.uj.sk.btcg.generation.processors.IProcessor;
-import com.edu.uj.sk.btcg.generation.processors.ProcessingStats;
+import com.edu.uj.sk.btcg.generation.processors.Stats;
 import com.edu.uj.sk.btcg.generation.processors.ProcessorsExecuter;
 import com.edu.uj.sk.btcg.logging.CLogger;
 import com.edu.uj.sk.btcg.persistance.TestCasePersister;
@@ -104,16 +104,18 @@ public class GenerateTestCasesHandler extends AbstractHandler {
 			
 			TestCasePersister persistTestCase = new TestCasePersister(outputDirectory);
 			
-			List<ProcessingStats> stats =
-					ProcessorsExecuter.process(processors, asSingleStrategy, bpmnModel, persistTestCase);
+			ProcessorsExecuter.process(processors, asSingleStrategy, bpmnModel, persistTestCase);
 			
-			List<ProcessingStats> uncombinedStrategiesStats = Lists.newArrayList();
+			List<Stats> uncombinedStrategiesStats = Lists.newArrayList();
 			
-			if (asSingleStrategy) 
-				uncombinedStrategiesStats = 
-					ProcessorsExecuter.process(processors, false, bpmnModel, falsePersister());
+			if (asSingleStrategy) {
+				TestCasePersister justCounting = justCountingPersister();
+				ProcessorsExecuter.process(processors, false, bpmnModel, justCounting);
+				
+				uncombinedStrategiesStats = justCounting.getStats(); 
+			}
 			
-			showInformationAboutFinishedGeneration(shell, stats, uncombinedStrategiesStats);
+			showInformationAboutFinishedGeneration(shell, persistTestCase.getStats(), uncombinedStrategiesStats);
 			
 		} catch (IOException | CoreException e) {
 			logger.warn("Execption during test cases generations!", e);
@@ -168,8 +170,8 @@ public class GenerateTestCasesHandler extends AbstractHandler {
 	
 	private void showInformationAboutFinishedGeneration(
 			Shell shell, 
-			List<ProcessingStats> stats, 
-			List<ProcessingStats> uncombinedStrategiesStats) {
+			List<Stats> stats, 
+			List<Stats> uncombinedStrategiesStats) {
 		
 		new StatsPresentationDialog(shell, stats, uncombinedStrategiesStats).open();
 	}
@@ -221,12 +223,14 @@ public class GenerateTestCasesHandler extends AbstractHandler {
 	}
 
 	
-	private TestCasePersister falsePersister() {
+	private TestCasePersister justCountingPersister() {
 		try {
 			return new TestCasePersister(null) {
+
 				@Override
-				public void persist(String namespace, BpmnModel model,
-						boolean preserveDuplications) throws IOException {
+				protected void saveOutput(File destination,
+						String generatedTestCase) throws IOException {
+					// just ignore saving 
 				}
 				
 			};

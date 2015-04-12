@@ -15,8 +15,7 @@ public class ProcessorsExecuter {
 	private static CLogger logger = CLogger.getLogger(ProcessorsExecuter.class);
 	
 	
-	public static List<ProcessingStats> process(final List<IProcessor> processors, final boolean asSingleStrategy, final BpmnModel model, final TestCasePersister persister) {
-		List<ProcessingStats> stats = Lists.newArrayList();
+	public static void process(final List<IProcessor> processors, final boolean asSingleStrategy, final BpmnModel model, final TestCasePersister persister) {
 		List<IProcessor> p = Lists.newArrayList(processors);
 		
 		if (asSingleStrategy) {
@@ -28,16 +27,13 @@ public class ProcessorsExecuter {
 			final BpmnModel copy = BpmnUtil.clone(model);
 			
 			try {
-				ProcessingStats stat = processor.process(copy, persister);
-				stats.add(stat);
+				processor.process(copy, persister);
 				
 			} catch (Exception e) {
 				logger.warn("Processor: [%s] finished with exception!", e, processor.getClass().getName());
 				throw new IllegalStateException(e);
 			}
 		}
-		
-		return stats;
 	}
 
 	

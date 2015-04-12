@@ -14,7 +14,7 @@ import com.edu.uj.sk.btcg.bpmn.BpmnUtil;
 import com.edu.uj.sk.btcg.generation.generators.IGenerator;
 import com.google.common.collect.Lists;
 
-public class BrokenIncomingFlowsToParallelGatewayGenerator implements IGenerator {
+public class LockInParallelGatewayGenerator implements IGenerator {
 
 	@Override
 	public Iterator<BpmnModel> generate(BpmnModel originalModel) {

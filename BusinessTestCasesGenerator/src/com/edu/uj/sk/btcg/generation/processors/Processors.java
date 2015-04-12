@@ -1,20 +1,20 @@
 package com.edu.uj.sk.btcg.generation.processors;
 
-import com.edu.uj.sk.btcg.generation.generators.impl.ArtifactGenerationFailedGenerator;
-import com.edu.uj.sk.btcg.generation.generators.impl.BrokenIncomingFlowsToParallelGatewayGenerator;
+import com.edu.uj.sk.btcg.generation.generators.impl.IncorectArtifactsGenerationGenerator;
+import com.edu.uj.sk.btcg.generation.generators.impl.LockInParallelGatewayGenerator;
 import com.edu.uj.sk.btcg.generation.generators.impl.CorruptedIncomingMessageGenerator;
 import com.edu.uj.sk.btcg.generation.generators.impl.CorruptedOutgoingMessageGenerator;
 import com.edu.uj.sk.btcg.generation.generators.impl.CoverageByInputManipulation;
-import com.edu.uj.sk.btcg.generation.generators.impl.CoverageByPaths;
-import com.edu.uj.sk.btcg.generation.generators.impl.ExceptionInScriptServiceTaskGenerator;
+import com.edu.uj.sk.btcg.generation.generators.impl.KEdgeCoverage;
+import com.edu.uj.sk.btcg.generation.generators.impl.ExceptionInAutomatedTasksGenerator;
 import com.edu.uj.sk.btcg.generation.generators.impl.HasRightsGenerator;
 import com.edu.uj.sk.btcg.generation.generators.impl.RetrivingInformationFailedGenerator;
-import com.edu.uj.sk.btcg.generation.generators.impl.SimpleCoverageGenerator;
-import com.edu.uj.sk.btcg.generation.generators.impl.UserTaskCasesGenerator;
+import com.edu.uj.sk.btcg.generation.generators.impl.CoverageByAllPathsGenerator;
+import com.edu.uj.sk.btcg.generation.generators.impl.ManualTaskGenerator;
 
 public class Processors {
-	public static IProcessor newNaiveCoverage() {
-		return new Processor("simple_coverage", new SimpleCoverageGenerator());
+	public static IProcessor newCoverageByAllPaths() {
+		return new Processor("coverage_by_all_paths", new CoverageByAllPathsGenerator());
 	}
 	
 	
@@ -33,37 +33,37 @@ public class Processors {
 	}
 	
 	
-	public static IProcessor newCoverageByUniquePaths(int kNearestDecisionNodes) {
-		return new Processor("coverage_by_paths", new CoverageByPaths(kNearestDecisionNodes), true);
+	public static IProcessor newKEdgeCoverage(int kNearestDecisionNodes) {
+		return new Processor("k_edge_coverage", new KEdgeCoverage(kNearestDecisionNodes), true);
 	}
 	
 	
 	public static IProcessor newManualTask() {
-		return new Processor("manual_tasks", new UserTaskCasesGenerator());
+		return new Processor("manual_tasks", new ManualTaskGenerator());
 	}
 	
 	
-	public static IProcessor newParallelGatewayLock() {
-		return new Processor("broken_parallel_tasks", new BrokenIncomingFlowsToParallelGatewayGenerator());
+	public static IProcessor newLockInParallelGateway() {
+		return new Processor("lock_in_parallel_gateway", new LockInParallelGatewayGenerator());
 	}
 	
 	
-	public static IProcessor newExceptionInScriptServiceTask() {
-		return new Processor("script_service_tasts_interrupted", new ExceptionInScriptServiceTaskGenerator());
+	public static IProcessor newExceptionInAutomatedTasks() {
+		return new Processor("exception_in_automated_tasks", new ExceptionInAutomatedTasksGenerator());
 	}
 	
 	
-	public static IProcessor newArtifactGenerationFail() {
-		return new Processor("producer_fail", new ArtifactGenerationFailedGenerator());
+	public static IProcessor newIncorrectArtifactsGeneration() {
+		return new Processor("incorrect_artifacts_generation", new IncorectArtifactsGenerationGenerator());
 	}
 	
 	
-	public static IProcessor newFailedInformationRetrival() {
-		return new Processor("data_fetching", new RetrivingInformationFailedGenerator());
+	public static IProcessor newInformationRetrivalTask() {
+		return new Processor("information_retrival_task", new RetrivingInformationFailedGenerator());
 	}
 	
 	
 	public static IProcessor newHasRights() {
-		return new Processor("rights", new HasRightsGenerator());
+		return new Processor("has_rights", new HasRightsGenerator());
 	}
 }

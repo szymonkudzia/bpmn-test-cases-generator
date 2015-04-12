@@ -95,8 +95,8 @@ public class GenerationStrategyPickerDialog extends Dialog {
 		retrivingInfoFailed = createCheckBox(sc, "Information retrival task");
 		exceptionInScriptServiceTask = createCheckBox(sc, "Exceptions in automated tasks");
 		hasRights = createCheckBox(sc, "Has rights");
-		naiveEdgeCoverage = createCheckBox(sc, "Naive edge coverage");
-		coverageByUniquePaths = createCheckBox(sc, "Coverage by unique paths");
+		naiveEdgeCoverage = createCheckBox(sc, "Coverage by all paths");
+		coverageByUniquePaths = createCheckBox(sc, "K-Edge coverage");
 		
 		Composite c = createHorizontalPanel(sc);
 	    
@@ -179,7 +179,7 @@ public class GenerationStrategyPickerDialog extends Dialog {
 		}
 		
 		if (naiveEdgeCoverage.getSelection())
-			chosenProcessors.add(Processors.newNaiveCoverage());
+			chosenProcessors.add(Processors.newCoverageByAllPaths());
 		
 		
 		if (manualTask.getSelection())
@@ -187,18 +187,18 @@ public class GenerationStrategyPickerDialog extends Dialog {
 		
 		
 		if (retrivingInfoFailed.getSelection())
-			chosenProcessors.add(Processors.newFailedInformationRetrival());
+			chosenProcessors.add(Processors.newInformationRetrivalTask());
 		
 		
 		if (exceptionInScriptServiceTask.getSelection())
-			chosenProcessors.add(Processors.newExceptionInScriptServiceTask());
+			chosenProcessors.add(Processors.newExceptionInAutomatedTasks());
 		
 		
 		if (hasRights.getSelection())
 			chosenProcessors.add(Processors.newHasRights());
 		
 		if (coverageByUniquePaths.getSelection())
-			chosenProcessors.add(Processors.newCoverageByUniquePaths(k));
+			chosenProcessors.add(Processors.newKEdgeCoverage(k));
 		
 		
 		if (coverageByInputManipulation.getSelection())
@@ -214,11 +214,11 @@ public class GenerationStrategyPickerDialog extends Dialog {
 		
 		
 		if (brokenIncomingFlowsToParallelGateway.getSelection())
-			chosenProcessors.add(Processors.newParallelGatewayLock());
+			chosenProcessors.add(Processors.newLockInParallelGateway());
 		
 		
 		if (artifactGenerationFailed.getSelection())
-			chosenProcessors.add(Processors.newArtifactGenerationFail());
+			chosenProcessors.add(Processors.newIncorrectArtifactsGeneration());
 		
 		asSingle = asSingleOne.getSelection();
 		

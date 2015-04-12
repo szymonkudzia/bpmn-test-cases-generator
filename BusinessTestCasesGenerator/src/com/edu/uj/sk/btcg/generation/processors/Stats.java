@@ -1,11 +1,11 @@
 package com.edu.uj.sk.btcg.generation.processors;
 
-public class ProcessingStats {
+public class Stats {
 	private String name;
 	private int total;
 	private int unique;
 
-	public ProcessingStats(String processorName, int total, int unique) {
+	public Stats(String processorName, int total, int unique) {
 		this.name = processorName;
 		this.total = total;
 		this.unique = unique;

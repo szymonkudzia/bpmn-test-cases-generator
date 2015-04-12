@@ -15,17 +15,17 @@ import org.eclipse.swt.widgets.Table;
 import org.eclipse.swt.widgets.TableColumn;
 import org.eclipse.swt.widgets.TableItem;
 
-import com.edu.uj.sk.btcg.generation.processors.ProcessingStats;
+import com.edu.uj.sk.btcg.generation.processors.Stats;
 import com.google.common.collect.Lists;
 
 public class StatsPresentationDialog extends Dialog {
 	private Composite container;
-	private List<ProcessingStats> stats;
-	private List<ProcessingStats> uncombinedStrategiesStats;
+	private List<Stats> stats;
+	private List<Stats> uncombinedStrategiesStats;
 
 	protected StatsPresentationDialog(Shell parentShell,
-			List<ProcessingStats> stats,
-			List<ProcessingStats> uncombinedStrategiesStats) {
+			List<Stats> stats,
+			List<Stats> uncombinedStrategiesStats) {
 		super(parentShell);
 
 		this.stats = stats;
@@ -40,7 +40,7 @@ public class StatsPresentationDialog extends Dialog {
 		
 		if (!uncombinedStrategiesStats.isEmpty()) {
 			new Label(container, SWT.NONE).setText("  "); // separator
-			new Label(container, SWT.NONE).setText("Results if strateges would not be combined: ");
+			new Label(container, SWT.NONE).setText("Results if strategies would not be combined: ");
 			
 			createTable(uncombinedStrategiesStats);
 		}
@@ -49,7 +49,7 @@ public class StatsPresentationDialog extends Dialog {
 	}
 
 	
-	private void createTable(List<ProcessingStats> stats) {
+	private void createTable(List<Stats> stats) {
 		Table table = new Table(container, SWT.BORDER | SWT.V_SCROLL | SWT.H_SCROLL);
 		table.setHeaderVisible(true);
 
@@ -57,7 +57,7 @@ public class StatsPresentationDialog extends Dialog {
 		new TableColumn(table, SWT.NULL).setText("Total TC");
 		new TableColumn(table, SWT.NULL).setText("Unique TC");
 
-		for (ProcessingStats stat : stats) {
+		for (Stats stat : stats) {
 			TableItem item = new TableItem(table, SWT.NULL);
 			item.setText(0, stat.getName());
 			item.setText(1, Integer.toString(stat.getTotal()));

@@ -5,25 +5,16 @@ import java.util.List;
 
 import org.activiti.bpmn.model.BpmnModel;
 import org.activiti.bpmn.model.FlowElement;
-import org.activiti.bpmn.model.ManualTask;
-import org.activiti.bpmn.model.UserTask;
+import org.activiti.bpmn.model.ScriptTask;
+import org.activiti.bpmn.model.ServiceTask;
 
 import com.edu.uj.sk.btcg.bpmn.BpmnQueries;
 import com.edu.uj.sk.btcg.bpmn.BpmnUtil;
 import com.edu.uj.sk.btcg.generation.generators.IGenerator;
 import com.google.common.collect.Lists;
 
-public class UserTaskCasesGenerator implements IGenerator {
-	private static final String ANNOTATION_TEXT;
-	
-	static {
-		ANNOTATION_TEXT = "Performer of this task:\n\n"
-			+ "1. Got sick and could not come to work.\n\n"
-			+ "2. Is overloaded so he/she needs more time to proceed this task.\n\n"
-			+ "3. Made mistake.\n\n"
-			+ "4. Is about to quit this job.\n\n"
-			;
-	}
+public class ExceptionInAutomatedTasksGenerator implements IGenerator {
+	private static final String ANNOTATION_TEXT = "Execution of task was interrupted.";
 
 	
 	@Override
@@ -38,8 +29,8 @@ public class UserTaskCasesGenerator implements IGenerator {
 		public Generator(BpmnModel originalModel) {
 			super(originalModel);
 			
-			userTasks.addAll(BpmnQueries.selectAllOfType(originalModel, UserTask.class));
-			userTasks.addAll(BpmnQueries.selectAllOfType(originalModel, ManualTask.class));
+			userTasks.addAll(BpmnQueries.selectAllOfType(originalModel, ScriptTask.class));
+			userTasks.addAll(BpmnQueries.selectAllOfType(originalModel, ServiceTask.class));
 		}
 
 		@Override
@@ -50,11 +41,11 @@ public class UserTaskCasesGenerator implements IGenerator {
 		@Override
 		public BpmnModel next() {
 			BpmnModel currentTestCase = BpmnUtil.clone(originalModel);
-			FlowElement userTask = userTasks.remove(0);
+			FlowElement task = userTasks.remove(0);
 			
-			userTask = currentTestCase.getFlowElement(userTask.getId());
+			task = currentTestCase.getFlowElement(task.getId());
 			
-			createAnnotationForElement(currentTestCase, ANNOTATION_TEXT, userTask);
+			createAnnotationForElement(currentTestCase, ANNOTATION_TEXT, task);
 			
 			return currentTestCase;
 		}

@@ -15,7 +15,7 @@ import org.activiti.bpmn.model.SequenceFlow;
 import com.edu.uj.sk.btcg.bpmn.BpmnUtil;
 import com.edu.uj.sk.btcg.generation.generators.IGenerator;
 
-public class SimpleCoverageGenerator implements IGenerator {
+public class CoverageByAllPathsGenerator implements IGenerator {
 
 	@Override
 	public Iterator<BpmnModel> generate(final BpmnModel originalModel) {

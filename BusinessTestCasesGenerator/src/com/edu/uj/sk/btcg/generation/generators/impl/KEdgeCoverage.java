@@ -25,11 +25,11 @@ import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 
-public class CoverageByPaths implements IGenerator {
+public class KEdgeCoverage implements IGenerator {
 	private int kNearestDecisionNodes = 1;
 
 	
-	public CoverageByPaths(int kNearestDecisionNodes) {
+	public KEdgeCoverage(int kNearestDecisionNodes) {
 		this.kNearestDecisionNodes = kNearestDecisionNodes;
 	}
 

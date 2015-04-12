@@ -1,15 +1,12 @@
 package com.edu.uj.sk.btcg.generation.processors;
 
 import java.util.Iterator;
-import java.util.Set;
 
 import org.activiti.bpmn.model.BpmnModel;
 
-import com.edu.uj.sk.btcg.bpmn.BpmnUtil;
 import com.edu.uj.sk.btcg.generation.generators.IGenerator;
 import com.edu.uj.sk.btcg.logging.CLogger;
 import com.edu.uj.sk.btcg.persistance.TestCasePersister;
-import com.google.common.collect.Sets;
 
 public class Processor implements IProcessor{
 	private static CLogger logger = CLogger.getLogger(Processor.class);
@@ -17,8 +14,6 @@ public class Processor implements IProcessor{
 	private IGenerator generator;
 	private String processorName;
 	private boolean preserveDuplications;
-	
-	private Set<String> uniqueModels = Sets.newHashSet();
 	
 	
 	
@@ -35,9 +30,8 @@ public class Processor implements IProcessor{
 	
 	
 	@Override
-	public ProcessingStats process(BpmnModel model, TestCasePersister persister) throws Exception {
+	public void process(BpmnModel model, TestCasePersister persister) throws Exception {
 		logger.info("Processor [%s] started...", processorName);
-		int total = 0;
 		
 		Iterator<BpmnModel> iterator = generator.generate(model);
 		while (iterator.hasNext()) {
@@ -45,14 +39,9 @@ public class Processor implements IProcessor{
 			
 			persister.persist(processorName, newTestCase, preserveDuplications);
 			
-			++total;
-			uniqueModels.add(BpmnUtil.toString(newTestCase));
 		}
 		
 		logger.info("Processor [%s] finished", processorName);
-		
-		
-		return new ProcessingStats(processorName, total, uniqueModels.size());
 	}
 
 

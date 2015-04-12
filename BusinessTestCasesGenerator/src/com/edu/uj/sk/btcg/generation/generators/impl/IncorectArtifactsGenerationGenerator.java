@@ -2,19 +2,22 @@ package com.edu.uj.sk.btcg.generation.generators.impl;
 
 import java.util.Iterator;
 import java.util.List;
+import java.util.function.Predicate;
+import java.util.stream.Collectors;
 
 import org.activiti.bpmn.model.BpmnModel;
 import org.activiti.bpmn.model.FlowElement;
 import org.activiti.bpmn.model.ScriptTask;
 import org.activiti.bpmn.model.ServiceTask;
+import org.apache.commons.lang.StringUtils;
 
 import com.edu.uj.sk.btcg.bpmn.BpmnQueries;
 import com.edu.uj.sk.btcg.bpmn.BpmnUtil;
 import com.edu.uj.sk.btcg.generation.generators.IGenerator;
 import com.google.common.collect.Lists;
 
-public class ExceptionInScriptServiceTaskGenerator implements IGenerator {
-	private static final String ANNOTATION_TEXT = "Execution of task was interrupted.";
+public class IncorectArtifactsGenerationGenerator implements IGenerator {
+	private static final String ANNOTATION_TEXT = "Task produces incorrect artifact";
 
 	
 	@Override
@@ -24,24 +27,42 @@ public class ExceptionInScriptServiceTaskGenerator implements IGenerator {
 	
 	
 	private class Generator extends AbstractGenerationIterator {
-		private List<FlowElement> userTasks = Lists.newArrayList();
+		private List<FlowElement> tasks = Lists.newArrayList();
 		
 		public Generator(BpmnModel originalModel) {
 			super(originalModel);
 			
-			userTasks.addAll(BpmnQueries.selectAllOfType(originalModel, ScriptTask.class));
-			userTasks.addAll(BpmnQueries.selectAllOfType(originalModel, ServiceTask.class));
+			tasks.addAll(BpmnQueries.selectAllOfType(originalModel, ScriptTask.class));
+			tasks.addAll(BpmnQueries.selectAllOfType(originalModel, ServiceTask.class));
+			
+			tasks = tasks.stream()
+					.filter(chooseArtifactProducer())
+					.collect(Collectors.toList());
+		}
+
+		private Predicate<? super FlowElement> chooseArtifactProducer() {
+			return e -> {
+				String name = StringUtils
+						.defaultString(e.getName())
+						.toLowerCase();
+				
+				return 
+					name.contains("generate") ||
+					name.contains("produce") ||
+					name.contains("create");
+			
+			};
 		}
 
 		@Override
 		public boolean hasNext() {
-			return !userTasks.isEmpty();
+			return !tasks.isEmpty();
 		}
 
 		@Override
 		public BpmnModel next() {
 			BpmnModel currentTestCase = BpmnUtil.clone(originalModel);
-			FlowElement task = userTasks.remove(0);
+			FlowElement task = tasks.remove(0);
 			
 			task = currentTestCase.getFlowElement(task.getId());
 			
