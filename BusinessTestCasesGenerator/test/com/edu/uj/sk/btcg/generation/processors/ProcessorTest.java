@@ -3,6 +3,7 @@ package com.edu.uj.sk.btcg.generation.processors;
 import java.util.Iterator;
 
 import org.activiti.bpmn.model.BpmnModel;
+import org.apache.commons.lang3.tuple.Pair;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -13,6 +14,7 @@ import org.mockito.Mockito;
 import org.mockito.runners.MockitoJUnitRunner;
 
 import com.edu.uj.sk.btcg.generation.generators.IGenerator;
+import com.edu.uj.sk.btcg.generation.generators.impl.GenerationInfo;
 import com.edu.uj.sk.btcg.persistance.TestCasePersister;
 
 @RunWith(MockitoJUnitRunner.class)
@@ -84,7 +86,7 @@ public class ProcessorTest {
 
 
 	private void generatorReturnsIteratorWithSize(final int size) {
-		Iterator<BpmnModel> iterator = new Iterator<BpmnModel>() {
+		Iterator<Pair<BpmnModel, GenerationInfo>> iterator = new Iterator<Pair<BpmnModel, GenerationInfo>>() {
 			private int i = 0;
 			
 			@Override
@@ -93,9 +95,9 @@ public class ProcessorTest {
 			}
 
 			@Override
-			public BpmnModel next() {
+			public Pair<BpmnModel, GenerationInfo> next() {
 				if (i++ < size) 				
-					return model;
+					return Pair.of(model, null);
 				
 				return null;
 			}
@@ -112,7 +114,7 @@ public class ProcessorTest {
 	
 	
 	private void generatorReturningEmptyIterator() {
-		Iterator<BpmnModel> iterator = new Iterator<BpmnModel>() {
+		Iterator<Pair<BpmnModel, GenerationInfo>> iterator = new Iterator<Pair<BpmnModel, GenerationInfo>>() {
 
 			@Override
 			public boolean hasNext() {
@@ -120,7 +122,7 @@ public class ProcessorTest {
 			}
 
 			@Override
-			public BpmnModel next() {
+			public Pair<BpmnModel, GenerationInfo> next() {
 				return null;
 			}
 		};
@@ -129,7 +131,7 @@ public class ProcessorTest {
 	}
 
 
-	private void generatorReturns(Iterator<BpmnModel> iterator) {
+	private void generatorReturns(Iterator<Pair<BpmnModel, GenerationInfo>> iterator) {
 		Mockito.when(generator.generate(model)).thenReturn(iterator);
 	}
 }

@@ -15,11 +15,11 @@ public class ProcessorsExecuter {
 	private static CLogger logger = CLogger.getLogger(ProcessorsExecuter.class);
 	
 	
-	public static void process(final List<IProcessor> processors, final boolean asSingleStrategy, final BpmnModel model, final TestCasePersister persister) {
+	public static void process(final List<IProcessor> processors, final boolean asSingleStrategy, final boolean optimizeResult, final BpmnModel model, final TestCasePersister persister) {
 		List<IProcessor> p = Lists.newArrayList(processors);
 		
 		if (asSingleStrategy) {
-			p = combineAsSingleStrategy(processors);
+			p = combineAsSingleStrategy(processors, optimizeResult);
 		}
 		
 		
@@ -38,10 +38,13 @@ public class ProcessorsExecuter {
 
 	
 
-	private static List<IProcessor> combineAsSingleStrategy(final List<IProcessor> processors) {
+	private static List<IProcessor> combineAsSingleStrategy(
+			List<IProcessor> processors, 
+			boolean optimizeResult) {
+		
 		List<IGenerator> generators = extractGeneratorsList(processors);
 		
-		return Lists.newArrayList(new MergingProcessor("all_combined", generators));
+		return Lists.newArrayList(new MergingProcessor("all_combined", generators, optimizeResult));
 	}
 
 

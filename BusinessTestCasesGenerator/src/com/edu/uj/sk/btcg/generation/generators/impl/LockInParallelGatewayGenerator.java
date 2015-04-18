@@ -8,6 +8,7 @@ import org.activiti.bpmn.model.FlowElement;
 import org.activiti.bpmn.model.ParallelGateway;
 import org.activiti.bpmn.model.SequenceFlow;
 import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.tuple.Pair;
 
 import com.edu.uj.sk.btcg.bpmn.BpmnQueries;
 import com.edu.uj.sk.btcg.bpmn.BpmnUtil;
@@ -17,11 +18,29 @@ import com.google.common.collect.Lists;
 public class LockInParallelGatewayGenerator implements IGenerator {
 
 	@Override
-	public Iterator<BpmnModel> generate(BpmnModel originalModel) {
+	public Iterator<Pair<BpmnModel, GenerationInfo>> generate(BpmnModel originalModel) {
 		return new Generator(originalModel);
 	}
+	
+	
+	
+	
+	
 
 	
+	@Override
+	public boolean allTestRequirementsCovered(BpmnModel model,
+			List<GenerationInfo> generationInfos) {
+		// TODO Auto-generated method stub
+		return false;
+	}
+
+
+
+
+
+
+
 	private class Generator extends AbstractGenerationIterator {
 		private List<SequenceFlow> connections = Lists.newArrayList();
 		
@@ -44,7 +63,7 @@ public class LockInParallelGatewayGenerator implements IGenerator {
 		}
 
 		@Override
-		public BpmnModel next() {
+		public Pair<BpmnModel, GenerationInfo> next() {
 			BpmnModel currentTestCase = BpmnUtil.clone(originalModel);
 			SequenceFlow currentConnection = connections.remove(0);
 			
@@ -53,12 +72,12 @@ public class LockInParallelGatewayGenerator implements IGenerator {
 			FlowElement source = currentTestCase.getFlowElement(currentConnection.getSourceRef());
 			FlowElement target = currentTestCase.getFlowElement(currentConnection.getTargetRef());
 			
-			createAnnotationForElement(currentTestCase, "If this task fails", source);
-			createAnnotationForElement(currentTestCase, "Then this gate which waits for all incoming flows will wait forever!!!", target);
+			BpmnQueries.createAnnotationForElement(currentTestCase, "If this task fails", source);
+			BpmnQueries.createAnnotationForElement(currentTestCase, "Then this gate which waits for all incoming flows will wait forever!!!", target);
 			
 			createAnnotationForConnection(currentConnection);
 			
-			return currentTestCase;
+			return Pair.of(currentTestCase, null);
 		}
 
 		private void createAnnotationForConnection(

@@ -167,4 +167,40 @@ public class CCollections {
 			
 			return map;
 	}
+
+
+
+	public static <T> List<List<T>> permutations(Collection<T> collection) {
+		return Lists.newArrayList(Collections2.permutations(collection));
+	}
+	
+	
+	
+	/**
+	 * Generate list of numbers
+	 * Starting from @from (inclusive) up till @to parameter (exclusive)
+	 * 
+	 * @param from integer 
+	 * @param to integer
+	 * @return list of integer
+	 */
+	public static List<Integer> range(int from, int to) {
+		List<Integer> integers = Lists.newArrayList();
+		
+		for (int i = from; i < to; i++) {
+			integers.add(i);
+		}
+		
+		return integers;
+	}
+	
+	/**
+	 * Generate list of numbers
+	 * Starting form 0 (inclusive) up till @to parameter (exclusive)
+	 * @param to
+	 * @return
+	 */
+	public static List<Integer> range(int to) {
+		return range(0, to);
+	}
 }

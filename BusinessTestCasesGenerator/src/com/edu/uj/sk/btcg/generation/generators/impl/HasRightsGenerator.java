@@ -10,6 +10,7 @@ import org.activiti.bpmn.model.FlowElement;
 import org.activiti.bpmn.model.ScriptTask;
 import org.activiti.bpmn.model.ServiceTask;
 import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.tuple.Pair;
 
 import com.edu.uj.sk.btcg.bpmn.BpmnQueries;
 import com.edu.uj.sk.btcg.bpmn.BpmnUtil;
@@ -21,11 +22,25 @@ public class HasRightsGenerator implements IGenerator {
 
 	
 	@Override
-	public Iterator<BpmnModel> generate(BpmnModel originalModel) {
+	public Iterator<Pair<BpmnModel, GenerationInfo>> generate(BpmnModel originalModel) {
 		return new Generator(originalModel);
 	}
 	
 	
+	
+	
+	
+	@Override
+	public boolean allTestRequirementsCovered(BpmnModel model,
+			List<GenerationInfo> generationInfos) {
+		// TODO Auto-generated method stub
+		return false;
+	}
+
+
+
+
+
 	private class Generator extends AbstractGenerationIterator {
 		private List<FlowElement> tasks = Lists.newArrayList();
 		
@@ -61,15 +76,15 @@ public class HasRightsGenerator implements IGenerator {
 		}
 
 		@Override
-		public BpmnModel next() {
+		public Pair<BpmnModel, GenerationInfo> next() {
 			BpmnModel currentTestCase = BpmnUtil.clone(originalModel);
 			FlowElement task = tasks.remove(0);
 			
 			task = currentTestCase.getFlowElement(task.getId());
 			
-			createAnnotationForElement(currentTestCase, ANNOTATION_TEXT, task);
+			BpmnQueries.createAnnotationForElement(currentTestCase, ANNOTATION_TEXT, task);
 			
-			return currentTestCase;
+			return Pair.of(currentTestCase, null);
 		}
 	}
 }

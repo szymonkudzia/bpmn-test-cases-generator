@@ -63,7 +63,12 @@ public class GenerateTestCasesHandler extends AbstractHandler {
 	    	
 	    	IFile modelToProcess = castToIFile(firstElement);
 	    	
-	    	processFile(shell, dialog.getChosenProcessors(), dialog.asSingleStrategy(), modelToProcess);
+	    	processFile(
+	    			shell, 
+	    			dialog.getChosenProcessors(), 
+	    			dialog.asSingleStrategy(),
+	    			dialog.optimizeResult(),
+	    			modelToProcess);
 
 	    	refreshPackageExplorer(modelToProcess);
 	    	
@@ -84,7 +89,14 @@ public class GenerateTestCasesHandler extends AbstractHandler {
 	
 	
 	
-	private void processFile(Shell shell, List<IProcessor> processors, boolean asSingleStrategy, IFile modelToProcess) {
+	private void processFile(
+			Shell shell, 
+			List<IProcessor> 
+			processors, 
+			boolean asSingleStrategy, 
+			boolean optimizeResult, 
+			IFile modelToProcess) {
+		
 		try {
 			String modelXml = IOUtils.toString(modelToProcess.getContents());
 			BpmnModel bpmnModel = BpmnUtil.toBpmnModel(modelXml);
@@ -92,7 +104,13 @@ public class GenerateTestCasesHandler extends AbstractHandler {
 			File outputDirectory = prepareOutputDirectory(shell, modelToProcess);
 			
 			TestCasePersister persistTestCase = new TestCasePersister(outputDirectory);
-			ProcessorsExecuter.process(processors, asSingleStrategy, bpmnModel, persistTestCase);
+			ProcessorsExecuter.process (
+					processors, 
+					asSingleStrategy, 
+					optimizeResult, 
+					bpmnModel, 
+					persistTestCase
+				);
 			
 			List<Stats> stats = persistTestCase.getStats();
 			List<Stats> uncombinedStrategiesStats = Lists.newArrayList();
@@ -150,7 +168,7 @@ public class GenerateTestCasesHandler extends AbstractHandler {
 			List<IProcessor> processors, BpmnModel bpmnModel) {
 		List<Stats> uncombinedStrategiesStats;
 		TestCasePersister justCounting = justCountingPersister();
-		ProcessorsExecuter.process(processors, false, bpmnModel, justCounting);
+		ProcessorsExecuter.process(processors, false, false, bpmnModel, justCounting);
 		
 		uncombinedStrategiesStats = justCounting.getStats();
 		

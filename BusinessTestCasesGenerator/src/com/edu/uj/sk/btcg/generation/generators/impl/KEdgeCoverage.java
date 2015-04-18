@@ -14,6 +14,7 @@ import org.activiti.bpmn.model.EndEvent;
 import org.activiti.bpmn.model.FlowElement;
 import org.activiti.bpmn.model.SequenceFlow;
 import org.activiti.bpmn.model.StartEvent;
+import org.apache.commons.lang3.tuple.Pair;
 
 import com.edu.uj.sk.btcg.bpmn.BpmnGraphTraversal;
 import com.edu.uj.sk.btcg.bpmn.BpmnGraphTraversalWithDefaultElementMarking;
@@ -35,16 +36,39 @@ public class KEdgeCoverage implements IGenerator {
 
 
 	@Override
-	public Iterator<BpmnModel> generate(BpmnModel originalModel) {
+	public Iterator<Pair<BpmnModel, GenerationInfo>> generate(BpmnModel originalModel) {
 		return new It(originalModel);
 	}
 
 	
+	
+	
+	@Override
+	public boolean allTestRequirementsCovered(BpmnModel model,
+			List<GenerationInfo> generationInfos) {
+		
+		List<List<String>> coveredTestRequirements = generationInfos
+				.stream()
+				.filter(i -> i instanceof KEdgeInfo)
+				.map(i -> (KEdgeInfo) i)
+				.map(i -> i.path)
+				.collect(Collectors.toList());
+		
+		
+		List<List<String>> allTestRequirements = new It(model).getTestRequirements();
+		
+		return coveredTestRequirements.containsAll(allTestRequirements);
+	}
+
+
+
+
 	private class It extends AbstractGenerationIterator {
-		private List<List<SequenceFlow>> testPaths = Lists.newArrayList();
+		List<List<String>> testRequirements = Lists.newArrayList();
 		
 		public It(BpmnModel originalModel) {
 			super(originalModel);
+			List<List<SequenceFlow>> testPaths = Lists.newArrayList();
 
 			
 			Traverser traverser = new Traverser();			
@@ -63,6 +87,13 @@ public class KEdgeCoverage implements IGenerator {
 					testPaths = paths;
 				}
 			}
+			
+			testRequirements = BpmnQueries.toListOfIdList(testPaths);
+		}
+		
+		
+		public List<List<String>> getTestRequirements() {
+			return testRequirements;
 		}
 
 
@@ -114,16 +145,15 @@ public class KEdgeCoverage implements IGenerator {
 
 		@Override
 		public boolean hasNext() {
-			return !testPaths.isEmpty();
+			return !testRequirements.isEmpty();
 		}
 
 		
 		@Override
-		public BpmnModel next() {
+		public Pair<BpmnModel, GenerationInfo> next() {
 			BpmnModel currentTestCase = BpmnUtil.clone(originalModel);		
 			
-			List<SequenceFlow> path = testPaths.remove(0);
-			List<String> pathIds = path.stream().map(p -> p.getId()).collect(Collectors.toList());
+			List<String> pathIds = testRequirements.remove(0);
 			
 			List<SequenceFlow> connections = BpmnQueries
 					.selectAllOfType(currentTestCase, SequenceFlow.class);
@@ -136,12 +166,15 @@ public class KEdgeCoverage implements IGenerator {
 			}
 			
 			for (SequenceFlow tr : toRemove) 
-				removeSequenceFlow(currentTestCase, tr);
+				BpmnQueries.removeSequenceFlow(currentTestCase, tr);
 			
-			removeUnconnectedElements(currentTestCase);
+			BpmnQueries.removeUnconnectedElements(currentTestCase);
 			
-			return currentTestCase;
+			return Pair.of(currentTestCase, KEdgeInfo.create(pathIds));
 		}
+
+
+
 		
 		
 		
@@ -267,4 +300,25 @@ public class KEdgeCoverage implements IGenerator {
 		
 	}
 	
+}
+
+
+
+class KEdgeInfo extends GenerationInfo {
+	public List<String> path = Lists.newArrayList();
+	
+	public KEdgeInfo() {}
+	
+	public KEdgeInfo(List<String> path) {
+		this.path.addAll(path);
+	}
+	
+	
+	public static KEdgeInfo create() {
+		return new KEdgeInfo();
+	}
+	
+	public static KEdgeInfo create(List<String> path) {
+		return new KEdgeInfo(path);
+	}
 }

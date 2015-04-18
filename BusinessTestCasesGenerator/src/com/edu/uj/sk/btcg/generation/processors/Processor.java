@@ -3,8 +3,10 @@ package com.edu.uj.sk.btcg.generation.processors;
 import java.util.Iterator;
 
 import org.activiti.bpmn.model.BpmnModel;
+import org.apache.commons.lang3.tuple.Pair;
 
 import com.edu.uj.sk.btcg.generation.generators.IGenerator;
+import com.edu.uj.sk.btcg.generation.generators.impl.GenerationInfo;
 import com.edu.uj.sk.btcg.logging.CLogger;
 import com.edu.uj.sk.btcg.persistance.TestCasePersister;
 
@@ -33,11 +35,11 @@ public class Processor implements IProcessor{
 	public void process(BpmnModel model, TestCasePersister persister) throws Exception {
 		logger.info("Processor [%s] started...", processorName);
 		
-		Iterator<BpmnModel> iterator = generator.generate(model);
+		Iterator<Pair<BpmnModel, GenerationInfo>> iterator = generator.generate(model);
 		while (iterator.hasNext()) {
-			BpmnModel newTestCase = iterator.next();
+			Pair<BpmnModel, GenerationInfo> newTestCase = iterator.next();
 			
-			persister.persist(processorName, newTestCase, preserveDuplications);
+			persister.persist(processorName, newTestCase.getKey(), preserveDuplications);
 			
 		}
 		

@@ -32,6 +32,9 @@ public class GenerationStrategyPickerDialog extends Dialog {
 	private boolean asSingle = false;
 	private Button asSingleOne;
 	
+	private boolean optimize = false;
+	private Button optimizeRes;
+	
 	private Button naiveEdgeCoverage;
 	private Button manualTask;
 	private Button retrivingInfoFailed;
@@ -56,6 +59,10 @@ public class GenerationStrategyPickerDialog extends Dialog {
 		return asSingle;
 	}
 	
+	public boolean optimizeResult() {
+		return optimize;
+	}
+	
 	
 	protected GenerationStrategyPickerDialog(Shell parentShell) {
 		super(parentShell);
@@ -67,6 +74,18 @@ public class GenerationStrategyPickerDialog extends Dialog {
 		
 
 		asSingleOne = createCheckBox(container, "Combine strategies as single one");
+		optimizeRes = createCheckBox(container, "Optimize result set");
+		optimizeRes.setSelection(true);
+		optimizeRes.setEnabled(false);
+		
+		asSingleOne.addSelectionListener(selectHandler(e -> {
+			if (asSingleOne.getSelection()) {
+				optimizeRes.setEnabled(true);
+			} else {
+				optimizeRes.setEnabled(false);
+			}
+		}));
+		
 		
 		createHorizontalSeparator();
 		
@@ -221,6 +240,9 @@ public class GenerationStrategyPickerDialog extends Dialog {
 			chosenProcessors.add(Processors.newIncorrectArtifactsGeneration());
 		
 		asSingle = asSingleOne.getSelection();
+		
+		if (asSingle)
+			optimize = optimizeRes.getSelection();
 		
 		super.okPressed();
 	}

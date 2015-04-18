@@ -7,6 +7,7 @@ import org.activiti.bpmn.model.BpmnModel;
 import org.activiti.bpmn.model.FlowElement;
 import org.activiti.bpmn.model.ManualTask;
 import org.activiti.bpmn.model.UserTask;
+import org.apache.commons.lang3.tuple.Pair;
 
 import com.edu.uj.sk.btcg.bpmn.BpmnQueries;
 import com.edu.uj.sk.btcg.bpmn.BpmnUtil;
@@ -27,11 +28,29 @@ public class ManualTaskGenerator implements IGenerator {
 
 	
 	@Override
-	public Iterator<BpmnModel> generate(BpmnModel originalModel) {
+	public Iterator<Pair<BpmnModel, GenerationInfo>> generate(BpmnModel originalModel) {
 		return new Generator(originalModel);
 	}
 	
 	
+	
+	
+	
+	
+	
+	@Override
+	public boolean allTestRequirementsCovered(BpmnModel model,
+			List<GenerationInfo> generationInfos) {
+		// TODO Auto-generated method stub
+		return false;
+	}
+
+
+
+
+
+
+
 	private class Generator extends AbstractGenerationIterator {
 		private List<FlowElement> userTasks = Lists.newArrayList();
 		
@@ -48,15 +67,15 @@ public class ManualTaskGenerator implements IGenerator {
 		}
 
 		@Override
-		public BpmnModel next() {
+		public Pair<BpmnModel, GenerationInfo> next() {
 			BpmnModel currentTestCase = BpmnUtil.clone(originalModel);
 			FlowElement userTask = userTasks.remove(0);
 			
 			userTask = currentTestCase.getFlowElement(userTask.getId());
 			
-			createAnnotationForElement(currentTestCase, ANNOTATION_TEXT, userTask);
+			BpmnQueries.createAnnotationForElement(currentTestCase, ANNOTATION_TEXT, userTask);
 			
-			return currentTestCase;
+			return Pair.of(currentTestCase, null);
 		}
 	}
 }

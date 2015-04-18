@@ -7,6 +7,7 @@ import java.util.stream.Collectors;
 import org.activiti.bpmn.model.BpmnModel;
 import org.activiti.bpmn.model.IntermediateCatchEvent;
 import org.activiti.bpmn.model.MessageEventDefinition;
+import org.apache.commons.lang3.tuple.Pair;
 
 import com.edu.uj.sk.btcg.bpmn.BpmnQueries;
 import com.edu.uj.sk.btcg.bpmn.BpmnUtil;
@@ -28,10 +29,23 @@ public class CorruptedIncomingMessageGenerator implements IGenerator {
 			;
 	
 	@Override
-	public Iterator<BpmnModel> generate(BpmnModel originalModel) {
+	public Iterator<Pair<BpmnModel, GenerationInfo>> generate(BpmnModel originalModel) {
 		return new It(originalModel);
 	}
 	
+	
+	
+	@Override
+	public boolean allTestRequirementsCovered(BpmnModel model,
+			List<GenerationInfo> generationInfos) {
+		// TODO Auto-generated method stub
+		return false;
+	}
+
+
+
+
+
 	class It extends AbstractGenerationIterator {
 		List<List<IntermediateCatchEvent>> messages = Lists.newArrayList();
 		
@@ -48,15 +62,15 @@ public class CorruptedIncomingMessageGenerator implements IGenerator {
 		}
 
 		@Override
-		public BpmnModel next() {
+		public Pair<BpmnModel, GenerationInfo> next() {
 			List<IntermediateCatchEvent> nextCatchEvents = messages.remove(0);
 				
 			BpmnModel newTestCase = BpmnUtil.clone(originalModel);
 			for (IntermediateCatchEvent e : nextCatchEvents) {
-				createAnnotationForElement(newTestCase, ANNOTATION_TEXT, e);
+				BpmnQueries.createAnnotationForElement(newTestCase, ANNOTATION_TEXT, e);
 			}
 			
-			return newTestCase;
+			return Pair.of(newTestCase, null);
 		}
 
 

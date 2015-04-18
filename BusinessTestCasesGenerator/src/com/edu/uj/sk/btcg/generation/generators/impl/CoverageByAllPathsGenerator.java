@@ -1,28 +1,38 @@
 package com.edu.uj.sk.btcg.generation.generators.impl;
 
 import java.util.Collection;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.activiti.bpmn.model.BpmnModel;
 import org.activiti.bpmn.model.ExclusiveGateway;
 import org.activiti.bpmn.model.FlowElement;
 import org.activiti.bpmn.model.SequenceFlow;
+import org.apache.commons.lang3.tuple.Pair;
 
+import com.edu.uj.sk.btcg.bpmn.BpmnQueries;
 import com.edu.uj.sk.btcg.bpmn.BpmnUtil;
 import com.edu.uj.sk.btcg.generation.generators.IGenerator;
 
 public class CoverageByAllPathsGenerator implements IGenerator {
 
 	@Override
-	public Iterator<BpmnModel> generate(final BpmnModel originalModel) {
+	public Iterator<Pair<BpmnModel, GenerationInfo>> generate(final BpmnModel originalModel) {
 		return new It(originalModel);
 	}
 
 	
+	
+	@Override
+	public boolean allTestRequirementsCovered(BpmnModel model,
+			List<GenerationInfo> generationInfos) {
+		// TODO Auto-generated method stub
+		return false;
+	}
+
+
+
 	class It extends AbstractGenerationIterator {
 		private List<ExclusiveGateway> conditions;
 		private int[] connectionIndexes;
@@ -41,8 +51,10 @@ public class CoverageByAllPathsGenerator implements IGenerator {
 		}
 
 		@Override
-		public BpmnModel next() {
-			return createNewTestCase(originalModel, conditions, connectionIndexes);
+		public Pair<BpmnModel , GenerationInfo> next() {
+			BpmnModel model = createNewTestCase(originalModel, conditions, connectionIndexes);
+			
+			return Pair.of(model, null);
 		}
 		
 		
@@ -59,7 +71,7 @@ public class CoverageByAllPathsGenerator implements IGenerator {
 			udpateToBeRemovedOutgingFlowIndexes(conditions, connectionIndexes);
 			
 			
-			removeUnconnectedElements(currentTestCase);
+			BpmnQueries.removeUnconnectedElements(currentTestCase);
 			return currentTestCase;
 		}
 
@@ -93,10 +105,10 @@ public class CoverageByAllPathsGenerator implements IGenerator {
 				BpmnModel currentTestCase) {
 			int conditionIndex = 0;
 			for (ExclusiveGateway c : conditions) {
-				ExclusiveGateway condition = getExclusiveGateway(currentTestCase, c);
+				ExclusiveGateway condition = BpmnQueries.getExclusiveGateway(currentTestCase, c);
 				
 				SequenceFlow removedConnection = condition.getOutgoingFlows().remove(connectionIndexes[conditionIndex]);
-				removeSequenceFlow(currentTestCase, removedConnection);
+				BpmnQueries.removeSequenceFlow(currentTestCase, removedConnection);
 				
 				conditionIndex++;
 			}
@@ -117,6 +129,9 @@ public class CoverageByAllPathsGenerator implements IGenerator {
 				List<ExclusiveGateway> conditions,
 				int[] indices) {
 			
+			if (conditions.isEmpty()) return false;
+			if (indices.length == 0) return false;
+			
 			return indices[0] < conditions.get(0).getOutgoingFlows().size();
 		}
 
@@ -124,7 +139,7 @@ public class CoverageByAllPathsGenerator implements IGenerator {
 		
 
 		private List<ExclusiveGateway> selectConditionElements(BpmnModel model) {
-			Collection<FlowElement> flowElements = selectAllFlowElements(model);
+			Collection<FlowElement> flowElements = BpmnQueries.selectAllFlowElements(model);
 			
 			List<ExclusiveGateway> conditions = flowElements
 					.stream()
@@ -136,25 +151,9 @@ public class CoverageByAllPathsGenerator implements IGenerator {
 		}
 		
 		
-		/**
-		 * Select all flow elements from given model
-		 * (Elements in subprocesses are ignored)
-		 * 
-		 * @param model
-		 * @return collection of all flow elements of main process in @model
-		 */
-		private Collection<FlowElement> selectAllFlowElements(BpmnModel model) {
-			Collection<FlowElement> mainElements = model.getMainProcess().getFlowElements();
-//			Collection<FlowElement> subElements = selectAllSubFlowElements(mainElements);
 
-			Set<FlowElement> result = new HashSet<>();
-			
-			result.addAll(mainElements);
-//			result.addAll(subElements);
-			
-			return result;
-		}
 		
 
 	}
 }
+

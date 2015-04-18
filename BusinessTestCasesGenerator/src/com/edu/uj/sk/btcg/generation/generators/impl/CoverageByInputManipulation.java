@@ -23,6 +23,7 @@ import org.activiti.bpmn.model.StartEvent;
 import org.activiti.bpmn.model.Task;
 import org.activiti.bpmn.model.UserTask;
 import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.tuple.Pair;
 
 import com.edu.uj.sk.btcg.bpmn.BpmnGraphTraversalWithDefaultElementMarking;
 import com.edu.uj.sk.btcg.bpmn.BpmnQueries;
@@ -41,11 +42,25 @@ public class CoverageByInputManipulation implements IGenerator {
 
 	
 	@Override
-	public Iterator<BpmnModel> generate(BpmnModel originalModel) {
+	public Iterator<Pair<BpmnModel, GenerationInfo>> generate(BpmnModel originalModel) {
 		return new It(originalModel);
 	}
 
 	
+	
+	
+	
+	@Override
+	public boolean allTestRequirementsCovered(BpmnModel model,
+			List<GenerationInfo> generationInfos) {
+		// TODO Auto-generated method stub
+		return false;
+	}
+
+
+
+
+
 	private class It extends AbstractGenerationIterator {
 		// Map<FlowElement Id, Map<Variable Name, Index>
 		private Map<String, Map<String, Integer>> idVariableIndexMap = new HashMap<>();
@@ -70,7 +85,7 @@ public class CoverageByInputManipulation implements IGenerator {
 
 		
 		@Override
-		public BpmnModel next() {
+		public Pair<BpmnModel, GenerationInfo> next() {
 			BpmnModel currentTestCase = BpmnUtil.clone(originalModel);
 			List<Object> currentValuesCombination = allValueCombinations.remove(0);
 			
@@ -78,8 +93,8 @@ public class CoverageByInputManipulation implements IGenerator {
 			
 			traverser.traverse(currentTestCase);
 			
-			removeUnconnectedElements(currentTestCase);
-			return currentTestCase;
+			BpmnQueries.removeUnconnectedElements(currentTestCase);
+			return Pair.of(currentTestCase, null);
 		}
 		
 		
@@ -125,7 +140,7 @@ public class CoverageByInputManipulation implements IGenerator {
 					}
 					
 					if (conditionValue == null || !conditionValue) {
-						removeSequenceFlow(model, sequenceFlow);
+						BpmnQueries.removeSequenceFlow(model, sequenceFlow);
 						elementIdToSkip = sequenceFlow.getTargetRef();
 					}
 				} 
@@ -182,7 +197,7 @@ public class CoverageByInputManipulation implements IGenerator {
 				String text = createAnnotationText(variables, variableValueMap);
 				
 				if (!StringUtils.isBlank(text))
-					createAnnotationForElement(model, text, element);
+					BpmnQueries.createAnnotationForElement(model, text, element);
 			}
 
 			
@@ -193,7 +208,7 @@ public class CoverageByInputManipulation implements IGenerator {
 				
 				FlowElement element = model.getFlowElement(sequenceFlow.getSourceRef());
 				
-				createAnnotationForElement(model, "Exception: " + e.getMessage(), element);
+				BpmnQueries.createAnnotationForElement(model, "Exception: " + e.getMessage(), element);
 			}
 			
 			
