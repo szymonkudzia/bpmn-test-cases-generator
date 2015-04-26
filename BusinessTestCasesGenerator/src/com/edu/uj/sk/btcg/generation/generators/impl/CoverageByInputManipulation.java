@@ -6,6 +6,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -34,7 +35,9 @@ import com.edu.uj.sk.btcg.logic.VariableValueExtractorFromBpmnModel;
 import com.edu.uj.sk.btcg.scripting.GroovyEvaluator;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
 import com.google.common.collect.Multimap;
+import com.google.common.collect.Sets;
 
 public class CoverageByInputManipulation implements IGenerator {
 	private VariableValueExtractorFromBpmnModel 
@@ -53,8 +56,27 @@ public class CoverageByInputManipulation implements IGenerator {
 	@Override
 	public boolean allTestRequirementsCovered(BpmnModel model,
 			List<GenerationInfo> generationInfos) {
-		// TODO Auto-generated method stub
-		return false;
+		
+		List<String> allTestRequirements =
+				new It(model).getAllTestRequirements();
+		
+		if (allTestRequirements.isEmpty()) return true;
+		
+		List<String> coveredTestRequirements =
+				Lists.newArrayList(
+					generationInfos.stream()
+						.filter(i -> i instanceof InputManipulationInfo)
+						.map(i -> (InputManipulationInfo) i)
+						.map(i -> Sets.newHashSet(i.variableValue))
+						.reduce(Sets.newHashSet(), (acc, vv) -> {
+							acc.addAll(vv);
+							return acc;
+						})
+				);
+		
+		
+		
+		return coveredTestRequirements.containsAll(allTestRequirements);
 	}
 
 
@@ -63,9 +85,13 @@ public class CoverageByInputManipulation implements IGenerator {
 
 	private class It extends AbstractGenerationIterator {
 		// Map<FlowElement Id, Map<Variable Name, Index>
-		private Map<String, Map<String, Integer>> idVariableIndexMap = new HashMap<>();
+		private Map<String, Map<String, Integer>> idVariableIndexMap = Maps.newHashMap();
 		private List<List<Object>> allValueCombinations;
 		
+		private Map<Integer, String> indexVariableMap = Maps.newHashMap();
+		
+		// concatenated variable name and value
+		private Set<String> testRequirement = Sets.newHashSet(); 
 		
 		public It(BpmnModel originalModel) {
 			super(originalModel);
@@ -74,6 +100,19 @@ public class CoverageByInputManipulation implements IGenerator {
 			userTaskVariableValueMap = variableValueExtractor.extract(originalModel);
 			
 			calculateIndexAndValuesCombination(userTaskVariableValueMap);
+			
+			for(Multimap<String, Object> variableValue : userTaskVariableValueMap.values()) {
+				for (String variable : variableValue.keySet()) {
+					for (Object value : variableValue.get(variable)) {
+						testRequirement.add(variable + "_" + value);
+					}
+				}
+			}
+		}
+		
+		
+		public List<String> getAllTestRequirements() {
+			return Lists.newArrayList(testRequirement);
 		}
 
 
@@ -94,7 +133,16 @@ public class CoverageByInputManipulation implements IGenerator {
 			traverser.traverse(currentTestCase);
 			
 			BpmnQueries.removeUnconnectedElements(currentTestCase);
-			return Pair.of(currentTestCase, null);
+			
+			Set<String> variableValue = Sets.newHashSet();
+			for (int i = 0; i < currentValuesCombination.size(); ++i) {
+				Object value = currentValuesCombination.get(i);
+				String variable = indexVariableMap.get(i);
+				
+				variableValue.add(variable + "_" + value);
+			}
+			
+			return Pair.of(currentTestCase, InputManipulationInfo.create(variableValue));
 		}
 		
 		
@@ -311,6 +359,7 @@ public class CoverageByInputManipulation implements IGenerator {
 					
 					values.add(variableValuesMap.get(variable));
 					variableIndexMap.put(variable, index);
+					indexVariableMap.put(index, variable);
 				}
 				
 				idVariableIndexMap.put(id, variableIndexMap);
@@ -401,4 +450,17 @@ public class CoverageByInputManipulation implements IGenerator {
 		
 	}
 	
+}
+
+
+class InputManipulationInfo extends GenerationInfo {
+	public List<String> variableValue = Lists.newArrayList(); 
+	
+	public InputManipulationInfo(List<String> variableValue) {
+		this.variableValue = variableValue;
+	}
+	
+	public static InputManipulationInfo create(Set<String> variableValue) {
+		return new InputManipulationInfo(Lists.newArrayList(variableValue));
+	}
 }

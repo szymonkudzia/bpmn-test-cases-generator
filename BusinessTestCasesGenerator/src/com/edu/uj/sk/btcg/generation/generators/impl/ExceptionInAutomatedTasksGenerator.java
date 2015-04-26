@@ -2,6 +2,7 @@ package com.edu.uj.sk.btcg.generation.generators.impl;
 
 import java.util.Iterator;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.activiti.bpmn.model.BpmnModel;
 import org.activiti.bpmn.model.FlowElement;
@@ -30,8 +31,22 @@ public class ExceptionInAutomatedTasksGenerator implements IGenerator {
 	@Override
 	public boolean allTestRequirementsCovered(BpmnModel model,
 			List<GenerationInfo> generationInfos) {
-		// TODO Auto-generated method stub
-		return false;
+		
+		List<String> allTestRequirements =
+				new Generator(model).getAllTestRequirements();
+		
+		if (allTestRequirements.isEmpty()) return true;
+
+		
+		List<String> coveredTestRequirements =
+				generationInfos.stream()
+					.filter(i -> i instanceof ExceptionInTasksInfo)
+					.map(i -> (ExceptionInTasksInfo) i)
+					.map(i -> i.task)
+					.collect(Collectors.toList());
+		
+		
+		return coveredTestRequirements.containsAll(allTestRequirements);
 	}
 
 
@@ -39,30 +54,47 @@ public class ExceptionInAutomatedTasksGenerator implements IGenerator {
 
 
 	private class Generator extends AbstractGenerationIterator {
-		private List<FlowElement> userTasks = Lists.newArrayList();
+		private List<FlowElement> automatedTasks = Lists.newArrayList();
 		
 		public Generator(BpmnModel originalModel) {
 			super(originalModel);
 			
-			userTasks.addAll(BpmnQueries.selectAllOfType(originalModel, ScriptTask.class));
-			userTasks.addAll(BpmnQueries.selectAllOfType(originalModel, ServiceTask.class));
+			automatedTasks.addAll(BpmnQueries.selectAllOfType(originalModel, ScriptTask.class));
+			automatedTasks.addAll(BpmnQueries.selectAllOfType(originalModel, ServiceTask.class));
+		}
+		
+		public List<String> getAllTestRequirements() {
+			return BpmnQueries.toIdList(automatedTasks);
 		}
 
 		@Override
 		public boolean hasNext() {
-			return !userTasks.isEmpty();
+			return !automatedTasks.isEmpty();
 		}
 
 		@Override
 		public Pair<BpmnModel, GenerationInfo> next() {
 			BpmnModel currentTestCase = BpmnUtil.clone(originalModel);
-			FlowElement task = userTasks.remove(0);
+			FlowElement task = automatedTasks.remove(0);
 			
 			task = currentTestCase.getFlowElement(task.getId());
 			
 			BpmnQueries.createAnnotationForElement(currentTestCase, ANNOTATION_TEXT, task);
 			
-			return Pair.of(currentTestCase, null);
+			return Pair.of(currentTestCase, ExceptionInTasksInfo.create(task));
 		}
+	}
+}
+
+
+class ExceptionInTasksInfo extends GenerationInfo {
+	public String task;
+
+	public ExceptionInTasksInfo(String task) {
+		this.task = task;
+	}
+
+	public static ExceptionInTasksInfo create(FlowElement task) {
+		return new ExceptionInTasksInfo(task.getId());
 	}
 }

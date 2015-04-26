@@ -11,7 +11,6 @@ import org.apache.commons.lang3.tuple.Pair;
 
 import com.edu.uj.sk.btcg.bpmn.BpmnQueries;
 import com.edu.uj.sk.btcg.bpmn.BpmnUtil;
-import com.edu.uj.sk.btcg.collections.CCollections;
 import com.edu.uj.sk.btcg.generation.generators.IGenerator;
 import com.google.common.collect.Lists;
 
@@ -38,8 +37,23 @@ public class CorruptedIncomingMessageGenerator implements IGenerator {
 	@Override
 	public boolean allTestRequirementsCovered(BpmnModel model,
 			List<GenerationInfo> generationInfos) {
-		// TODO Auto-generated method stub
-		return false;
+		
+		List<String> allTestRequirements =
+				new It(model).getAllTestRequirements();
+		
+		if (allTestRequirements.isEmpty()) return true;
+
+		
+		List<String> coveredTestRequirements = 
+				generationInfos
+					.stream()
+					.filter(i -> i instanceof CorruptedInMessageInfo)
+					.map(i -> (CorruptedInMessageInfo) i)
+					.map(i -> i.receiver)
+					.collect(Collectors.toList());
+		
+		
+		return coveredTestRequirements.containsAll(allTestRequirements);
 	}
 
 
@@ -47,30 +61,33 @@ public class CorruptedIncomingMessageGenerator implements IGenerator {
 
 
 	class It extends AbstractGenerationIterator {
-		List<List<IntermediateCatchEvent>> messages = Lists.newArrayList();
+		List<IntermediateCatchEvent> messageReceivers = Lists.newArrayList();
 		
 		public It(BpmnModel originalModel) {
 			super(originalModel);
 			
-			messages = CCollections.powerSet(selectIncominvMessagesEvents(originalModel));
+			messageReceivers = selectIncominvMessagesEvents(originalModel);
 			
 		}
 		
+		public List<String> getAllTestRequirements() {
+			return BpmnQueries.toIdList(messageReceivers);
+		}
+		
+		
 		@Override
 		public boolean hasNext() {
-			return !messages.isEmpty();
+			return !messageReceivers.isEmpty();
 		}
 
 		@Override
 		public Pair<BpmnModel, GenerationInfo> next() {
-			List<IntermediateCatchEvent> nextCatchEvents = messages.remove(0);
+			IntermediateCatchEvent nextCatchEvent = messageReceivers.remove(0);
 				
 			BpmnModel newTestCase = BpmnUtil.clone(originalModel);
-			for (IntermediateCatchEvent e : nextCatchEvents) {
-				BpmnQueries.createAnnotationForElement(newTestCase, ANNOTATION_TEXT, e);
-			}
+			BpmnQueries.createAnnotationForElement(newTestCase, ANNOTATION_TEXT, nextCatchEvent);
 			
-			return Pair.of(newTestCase, null);
+			return Pair.of(newTestCase, CorruptedInMessageInfo.create(nextCatchEvent));
 		}
 
 
@@ -93,4 +110,17 @@ public class CorruptedIncomingMessageGenerator implements IGenerator {
 	}
 
 
+}
+
+
+class CorruptedInMessageInfo extends GenerationInfo {
+	public String receiver;
+	
+	public CorruptedInMessageInfo(String receivers) {
+		this.receiver = receivers;
+	}
+	
+	public static CorruptedInMessageInfo create(IntermediateCatchEvent receivers) {
+		return new CorruptedInMessageInfo(receivers.getId());
+	}
 }

@@ -33,8 +33,22 @@ public class HasRightsGenerator implements IGenerator {
 	@Override
 	public boolean allTestRequirementsCovered(BpmnModel model,
 			List<GenerationInfo> generationInfos) {
-		// TODO Auto-generated method stub
-		return false;
+		
+		List<String> allTestRequirements =
+				new Generator(model).getAllTestRequirements();
+		
+		if (allTestRequirements.isEmpty()) return true;
+
+		
+		List<String> coveredTestRequirements =
+				generationInfos.stream()
+					.filter(i -> i instanceof HasRightsInfo)
+					.map(i -> (HasRightsInfo) i)
+					.map(i -> i.task)
+					.collect(Collectors.toList());
+		
+		
+		return coveredTestRequirements.containsAll(allTestRequirements);
 	}
 
 
@@ -54,21 +68,13 @@ public class HasRightsGenerator implements IGenerator {
 					.filter(chooseArtifactProducer())
 					.collect(Collectors.toList());
 		}
-
-		private Predicate<? super FlowElement> chooseArtifactProducer() {
-			return e -> {
-				String name = StringUtils
-						.defaultString(e.getName())
-						.toLowerCase();
-				
-				return 
-					name.contains("has access") ||
-					name.contains("has rights") ||
-					name.contains("is permitted") ||
-					name.contains("is allowed");
-			
-			};
+		
+		public List<String> getAllTestRequirements() {
+			return BpmnQueries.toIdList(tasks);
 		}
+		
+
+
 
 		@Override
 		public boolean hasNext() {
@@ -84,7 +90,35 @@ public class HasRightsGenerator implements IGenerator {
 			
 			BpmnQueries.createAnnotationForElement(currentTestCase, ANNOTATION_TEXT, task);
 			
-			return Pair.of(currentTestCase, null);
+			return Pair.of(currentTestCase, HasRightsInfo.create(task));
 		}
+		
+		
+		private Predicate<? super FlowElement> chooseArtifactProducer() {
+			return e -> {
+				String name = StringUtils
+						.defaultString(e.getName())
+						.toLowerCase();
+				
+				return 
+					name.contains("has access") ||
+					name.contains("has rights") ||
+					name.contains("is permitted") ||
+					name.contains("is allowed");
+			
+			};
+		}
+	}
+}
+
+class HasRightsInfo extends GenerationInfo {
+	public String task;
+
+	public HasRightsInfo(String task) {
+		this.task = task;
+	}
+
+	public static HasRightsInfo create(FlowElement task) {
+		return new HasRightsInfo(task.getId());
 	}
 }

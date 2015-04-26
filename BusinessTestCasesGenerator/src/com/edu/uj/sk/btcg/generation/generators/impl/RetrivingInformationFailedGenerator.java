@@ -27,16 +27,24 @@ public class RetrivingInformationFailedGenerator implements IGenerator {
 	}
 	
 	
-	
-	
-	
-	
-	
 	@Override
 	public boolean allTestRequirementsCovered(BpmnModel model,
 			List<GenerationInfo> generationInfos) {
-		// TODO Auto-generated method stub
-		return false;
+		
+		List<String> allTestRequirements =
+				new Generator(model).getAllTestRequirements();
+		if (allTestRequirements.isEmpty()) return true;
+
+		
+		List<String> coveredTestRequirements =
+				generationInfos.stream()
+					.filter(i -> i instanceof RetrivingInformationFailed)
+					.map(i -> (RetrivingInformationFailed) i)
+					.map(i -> i.task)
+					.collect(Collectors.toList());
+		
+		
+		return coveredTestRequirements.containsAll(allTestRequirements);
 	}
 
 
@@ -58,6 +66,12 @@ public class RetrivingInformationFailedGenerator implements IGenerator {
 					.filter(chooseArtifactProducer())
 					.collect(Collectors.toList());
 		}
+		
+		
+		public List<String> getAllTestRequirements() {
+			return BpmnQueries.toIdList(tasks);
+		}
+		
 
 		private Predicate<? super FlowElement> chooseArtifactProducer() {
 			return e -> {
@@ -90,7 +104,20 @@ public class RetrivingInformationFailedGenerator implements IGenerator {
 			
 			BpmnQueries.createAnnotationForElement(currentTestCase, ANNOTATION_TEXT, task);
 			
-			return Pair.of(currentTestCase, null);
+			return Pair.of(currentTestCase, RetrivingInformationFailed.create(task));
 		}
+	}
+}
+
+
+class RetrivingInformationFailed extends GenerationInfo {
+	public String task;
+
+	protected RetrivingInformationFailed(String task) {
+		this.task = task;
+	}
+
+	public static RetrivingInformationFailed create(FlowElement task) {
+		return new RetrivingInformationFailed(task.getId());
 	}
 }

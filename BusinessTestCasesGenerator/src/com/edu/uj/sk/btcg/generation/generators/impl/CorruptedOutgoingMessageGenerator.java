@@ -10,7 +10,6 @@ import org.apache.commons.lang3.tuple.Pair;
 
 import com.edu.uj.sk.btcg.bpmn.BpmnQueries;
 import com.edu.uj.sk.btcg.bpmn.BpmnUtil;
-import com.edu.uj.sk.btcg.collections.CCollections;
 import com.edu.uj.sk.btcg.generation.generators.IGenerator;
 import com.google.common.collect.Lists;
 
@@ -42,16 +41,19 @@ public class CorruptedOutgoingMessageGenerator implements IGenerator {
 			BpmnModel model,
 			List<GenerationInfo> generationInfos) {
 		
-		List<List<String>> coveredTestRequirements = 
+		List<String> allTestRequirements =
+				new It(model).getAllTestRequirements();
+		
+		if (allTestRequirements.isEmpty()) return true;
+		
+		List<String> coveredTestRequirements = 
 				generationInfos
 					.stream()
 					.filter(i -> i instanceof CorruptedOutMessageInfo)
 					.map(i -> (CorruptedOutMessageInfo) i)
-					.map(i -> BpmnQueries.toIdList(i.senders))
+					.map(i -> i.senders)
 					.collect(Collectors.toList());
 		
-		List<List<String>> allTestRequirements =
-				new It(model).getAllTestRequirements();
 		
 		return coveredTestRequirements.containsAll(allTestRequirements);
 	}
@@ -61,17 +63,17 @@ public class CorruptedOutgoingMessageGenerator implements IGenerator {
 
 
 	class It extends AbstractGenerationIterator {
-		List<List<ServiceTask>> messageSenders = Lists.newArrayList();
+		List<ServiceTask> messageSenders = Lists.newArrayList();
 		
 		public It(BpmnModel originalModel) {
 			super(originalModel);
 			
-			messageSenders = CCollections.powerSet(selectOutgoingMessagesEvents(originalModel));
+			messageSenders = selectOutgoingMessagesEvents(originalModel);
 			
 		}
 		
-		public List<List<String>> getAllTestRequirements() {
-			return BpmnQueries.toListOfIdList(messageSenders);
+		public List<String> getAllTestRequirements() {
+			return BpmnQueries.toIdList(messageSenders);
 		}
 		
 		
@@ -82,14 +84,12 @@ public class CorruptedOutgoingMessageGenerator implements IGenerator {
 
 		@Override
 		public Pair<BpmnModel, GenerationInfo> next() {
-			List<ServiceTask> nextMessageSenders = messageSenders.remove(0);
+			ServiceTask nextMessageSender = messageSenders.remove(0);
 			
 			BpmnModel newTestCase = BpmnUtil.clone(originalModel);
-			for (ServiceTask e : nextMessageSenders) {
-				BpmnQueries.createAnnotationForElement(newTestCase, ANNOTATION_TEXT, e);
-			}
+			BpmnQueries.createAnnotationForElement(newTestCase, ANNOTATION_TEXT, nextMessageSender);
 			
-			return Pair.of(newTestCase, CorruptedOutMessageInfo.create(nextMessageSenders));
+			return Pair.of(newTestCase, CorruptedOutMessageInfo.create(nextMessageSender));
 		}
 
 
@@ -116,13 +116,13 @@ public class CorruptedOutgoingMessageGenerator implements IGenerator {
 
 
 class CorruptedOutMessageInfo extends GenerationInfo {
-	public List<ServiceTask> senders;
+	public String senders;
 	
-	public CorruptedOutMessageInfo(List<ServiceTask> senders) {
+	public CorruptedOutMessageInfo(String senders) {
 		this.senders = senders;
 	}
 	
-	public static CorruptedOutMessageInfo create(List<ServiceTask> senders) {
-		return new CorruptedOutMessageInfo(senders);
+	public static CorruptedOutMessageInfo create(ServiceTask senders) {
+		return new CorruptedOutMessageInfo(senders.getId());
 	}
 }

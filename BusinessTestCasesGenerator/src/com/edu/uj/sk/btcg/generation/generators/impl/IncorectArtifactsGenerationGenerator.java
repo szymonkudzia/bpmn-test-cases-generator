@@ -35,8 +35,22 @@ public class IncorectArtifactsGenerationGenerator implements IGenerator {
 	@Override
 	public boolean allTestRequirementsCovered(BpmnModel model,
 			List<GenerationInfo> generationInfos) {
-		// TODO Auto-generated method stub
-		return false;
+		
+		List<String> allTestRequirements =
+				new Generator(model).getAllTestRequirements();
+		
+		if (allTestRequirements.isEmpty()) return true;
+
+		
+		List<String> coveredTestRequirements =
+				generationInfos.stream()
+					.filter(i -> i instanceof IncorrectArtifactsInfo)
+					.map(i -> (IncorrectArtifactsInfo) i)
+					.map(i -> i.task)
+					.collect(Collectors.toList());
+		
+		
+		return coveredTestRequirements.containsAll(allTestRequirements);
 	}
 
 
@@ -59,19 +73,10 @@ public class IncorectArtifactsGenerationGenerator implements IGenerator {
 					.collect(Collectors.toList());
 		}
 
-		private Predicate<? super FlowElement> chooseArtifactProducer() {
-			return e -> {
-				String name = StringUtils
-						.defaultString(e.getName())
-						.toLowerCase();
-				
-				return 
-					name.contains("generate") ||
-					name.contains("produce") ||
-					name.contains("create");
-			
-			};
+		public List<String> getAllTestRequirements() {
+			return BpmnQueries.toIdList(tasks);
 		}
+		
 
 		@Override
 		public boolean hasNext() {
@@ -87,7 +92,36 @@ public class IncorectArtifactsGenerationGenerator implements IGenerator {
 			
 			BpmnQueries.createAnnotationForElement(currentTestCase, ANNOTATION_TEXT, task);
 			
-			return Pair.of(currentTestCase, null);
+			return Pair.of(currentTestCase, IncorrectArtifactsInfo.create(task));
 		}
+		
+		
+
+		private Predicate<? super FlowElement> chooseArtifactProducer() {
+			return e -> {
+				String name = StringUtils
+						.defaultString(e.getName())
+						.toLowerCase();
+				
+				return 
+					name.contains("generate") ||
+					name.contains("produce") ||
+					name.contains("create");
+			
+			};
+		}
+	}
+}
+
+
+class IncorrectArtifactsInfo extends GenerationInfo {
+	public String task;
+
+	public IncorrectArtifactsInfo(String task) {
+		this.task = task;
+	}
+
+	public static IncorrectArtifactsInfo create(FlowElement task) {
+		return new IncorrectArtifactsInfo(task.getId());
 	}
 }

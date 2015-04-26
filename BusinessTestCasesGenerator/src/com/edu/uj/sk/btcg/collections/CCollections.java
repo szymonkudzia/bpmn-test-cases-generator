@@ -4,12 +4,14 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
 import com.google.common.base.Optional;
+import com.google.common.base.Preconditions;
 import com.google.common.base.Predicate;
 import com.google.common.collect.Collections2;
 import com.google.common.collect.HashMultimap;
@@ -77,24 +79,134 @@ public class CCollections {
 	}
 	
 	
-	public static <T> Set<Set<T>> powerSet(Set<T> originalSet) {
-	    Set<Set<T>> sets = new HashSet<Set<T>>();
-	    if (originalSet.isEmpty()) {
-	    	sets.add(new HashSet<T>());
-	    	return sets;
+	
+	public static <T> Set<Set<T>> powerSet(Set<T> intList){
+
+	    Set<Set<T>> result = new HashSet<>();
+	    result.add(new HashSet<>());
+
+	    for (T i : intList){
+
+	        Set<Set<T>> temp = new HashSet<>();
+
+	        for(Set<T> intSet : result){
+
+	            intSet = new HashSet<>(intSet);
+	            intSet.add(i);                
+	            temp.add(intSet);
+	        }
+	        result.addAll(temp);
 	    }
-	    List<T> list = new ArrayList<T>(originalSet);
-	    T head = list.get(0);
-	    Set<T> rest = new HashSet<T>(list.subList(1, list.size())); 
-	    for (Set<T> set : powerSet(rest)) {
-	    	Set<T> newSet = new HashSet<T>();
-	    	newSet.add(head);
-	    	newSet.addAll(set);
-	    	sets.add(newSet);
-	    	sets.add(set);
-	    }		
-	    return sets;
+	    
+	    return result;
 	}
+	
+//	public static <T> Set<Set<T>> powerSet(Set<T> originalSet) {
+//	    Set<Set<T>> sets = new HashSet<Set<T>>();
+//	    if (originalSet.isEmpty()) {
+//	    	sets.add(new HashSet<T>());
+//	    	return sets;
+//	    }
+//	    List<T> list = new ArrayList<T>(originalSet);
+//	    T head = list.get(0);
+//	    Set<T> rest = new HashSet<T>(list.subList(1, list.size())); 
+//	    for (Set<T> set : powerSet(rest)) {
+//	    	Set<T> newSet = new HashSet<T>();
+//	    	newSet.add(head);
+//	    	newSet.addAll(set);
+//	    	sets.add(newSet);
+//	    	sets.add(set);
+//	    }		
+//	    return sets;
+//	}
+	
+	
+	public static <T> Iterator<List<T>> powerSetIterator(final Collection<T> collection) {
+		return new Iterator<List<T>>() {
+			List<T> source = Lists.newArrayList(collection);
+			ArrayList<Integer> indices = Lists.newArrayList();
+			
+			
+			@Override
+			public boolean hasNext() {
+				int compareResult = indices.size() - source.size();
+				
+				if (compareResult < 0) 
+					return true;
+				
+				return false;
+			}
+
+			@Override
+			public List<T> next() {
+				if (indices.isEmpty()) {
+					indices.add(-1);
+					return Lists.newArrayList();
+				}
+				
+				updateIndices();
+								
+			    return pickSubList();
+			}
+			
+			
+			private void updateIndices() {
+				boolean addNew = false;
+				
+				int lastIdx = getLastIndex(source);
+				for (int i = getLastIndex(indices), ri = 0; i >= 0; --i, ++ri) {
+					int idx = indices.get(i) + 1;
+					
+					if (idx <= lastIdx - ri) {
+						indices.set(i, idx);
+						break;
+						
+					} else if (i == 0) {
+						addNew = true;
+						break;
+					}
+				}
+				
+				if (addNew)
+					indices = Lists.newArrayList(range(indices.size() + 1));
+			}
+			
+			private List<T> pickSubList() {
+				final List<T> sublist = Lists.newArrayList();
+				
+				indices.forEach(i -> sublist.add(source.get(i)));
+						
+				return sublist;
+			}
+		};
+	}
+	
+	
+	
+	public static <T> T getLast(List<T> list) {
+		Preconditions.checkNotNull(list, "Cannot get last element from null list");
+		Preconditions.checkArgument(!list.isEmpty(), "Cannot get last element from empty list");
+		
+		return list.get(list.size());
+	}
+	
+	public static <T> int getLastIndex(Collection<T> list) {
+		Preconditions.checkNotNull(list, "Cannot get last element from null list");
+		Preconditions.checkArgument(!list.isEmpty(), "Cannot get last element from empty list");
+		
+		return list.size() - 1;
+	}
+	
+	
+	public static <T> T getFirst(List<T> list) {
+		Preconditions.checkNotNull(list, "Cannot get last element from null list");
+		Preconditions.checkArgument(!list.isEmpty(), "Cannot get last element from empty list");
+		
+		return list.get(0);
+	}
+	
+	
+	
 	
 	
 	

@@ -2,6 +2,7 @@ package com.edu.uj.sk.btcg.generation.generators.impl;
 
 import java.util.Iterator;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.activiti.bpmn.model.BpmnModel;
 import org.activiti.bpmn.model.FlowElement;
@@ -23,16 +24,26 @@ public class LockInParallelGatewayGenerator implements IGenerator {
 	}
 	
 	
-	
-	
-	
-
-	
 	@Override
-	public boolean allTestRequirementsCovered(BpmnModel model,
+	public boolean allTestRequirementsCovered(
+			BpmnModel model,
 			List<GenerationInfo> generationInfos) {
-		// TODO Auto-generated method stub
-		return false;
+			
+		List<String> allTestRequirements =
+				new Generator(model).getAllTestRequirements();
+		
+		if (allTestRequirements.isEmpty()) return true;
+
+		
+		List<String> coveredTestRequirements =
+				generationInfos.stream()
+					.filter(i -> i instanceof LockInParallelGatewayInfo)
+					.map(i -> (LockInParallelGatewayInfo) i)
+					.map(i -> i.connection)
+					.collect(Collectors.toList());
+		
+		
+		return coveredTestRequirements.containsAll(allTestRequirements);
 	}
 
 
@@ -56,6 +67,12 @@ public class LockInParallelGatewayGenerator implements IGenerator {
 				}
 			}
 		}
+		
+		
+		public List<String> getAllTestRequirements() {
+			return BpmnQueries.toIdList(connections);
+		}
+		
 
 		@Override
 		public boolean hasNext() {
@@ -77,7 +94,7 @@ public class LockInParallelGatewayGenerator implements IGenerator {
 			
 			createAnnotationForConnection(currentConnection);
 			
-			return Pair.of(currentTestCase, null);
+			return Pair.of(currentTestCase, LockInParallelGatewayInfo.create(currentConnection));
 		}
 
 		private void createAnnotationForConnection(
@@ -92,5 +109,18 @@ public class LockInParallelGatewayGenerator implements IGenerator {
 			currentConnection.setName(newName);
 		}
 		
+	}
+}
+
+
+class LockInParallelGatewayInfo extends GenerationInfo {
+	public String connection;
+
+	protected LockInParallelGatewayInfo(String connection) {
+		this.connection = connection;
+	}
+
+	public static LockInParallelGatewayInfo create(SequenceFlow connection) {
+		return new LockInParallelGatewayInfo(connection.getId());
 	}
 }

@@ -14,6 +14,7 @@ import org.apache.commons.lang3.tuple.Pair;
 import com.edu.uj.sk.btcg.bpmn.BpmnQueries;
 import com.edu.uj.sk.btcg.bpmn.BpmnUtil;
 import com.edu.uj.sk.btcg.generation.generators.IGenerator;
+import com.google.common.collect.Lists;
 
 public class CoverageByAllPathsGenerator implements IGenerator {
 
@@ -27,8 +28,19 @@ public class CoverageByAllPathsGenerator implements IGenerator {
 	@Override
 	public boolean allTestRequirementsCovered(BpmnModel model,
 			List<GenerationInfo> generationInfos) {
-		// TODO Auto-generated method stub
-		return false;
+		List<String> allTestRequirements = new It(model).getAllTestRequirements();
+		if (allTestRequirements.isEmpty()) return true;
+		
+		List<String> coveredTestRequirements = generationInfos.stream()
+			.filter(i -> i instanceof AllPathsInfo)
+			.map(i -> (AllPathsInfo) i)
+			.map(i -> i.connections)
+			.reduce(Lists.newArrayList(), (acc, c) -> {
+				acc.addAll(c);
+				return acc;
+			});
+		
+		return coveredTestRequirements.containsAll(allTestRequirements);
 	}
 
 
@@ -45,6 +57,17 @@ public class CoverageByAllPathsGenerator implements IGenerator {
 			connectionIndexes = new int[conditions.size()];
 		}
 
+		
+		public List<String> getAllTestRequirements() {
+			return conditions.stream()
+					.map(c -> BpmnQueries.toIdList(c.getOutgoingFlows()))
+					.reduce(Lists.newArrayList(), (acc, c) -> {
+						acc.addAll(c);
+						return acc;
+					});					
+		}
+		
+		
 		@Override
 		public boolean hasNext() {
 			return thereIsUnusedPermutation(conditions, connectionIndexes);
@@ -52,27 +75,26 @@ public class CoverageByAllPathsGenerator implements IGenerator {
 
 		@Override
 		public Pair<BpmnModel , GenerationInfo> next() {
-			BpmnModel model = createNewTestCase(originalModel, conditions, connectionIndexes);
-			
-			return Pair.of(model, null);
+			return createNewTestCase(originalModel, conditions, connectionIndexes);
 		}
 		
 		
 		
 		
 
-		private BpmnModel createNewTestCase(BpmnModel model,
+		private Pair<BpmnModel, GenerationInfo> createNewTestCase(BpmnModel model,
 				List<ExclusiveGateway> conditions, int[] connectionIndexes) {
 			BpmnModel currentTestCase = BpmnUtil.clone(model);
 			
-			removeConditionsSelectedOutgoingFlows(
-					conditions, connectionIndexes, currentTestCase);
+			List<SequenceFlow> removedConnections = 
+					removeConditionsSelectedOutgoingFlows(
+							conditions, connectionIndexes, currentTestCase);
 			
 			udpateToBeRemovedOutgingFlowIndexes(conditions, connectionIndexes);
 			
 			
 			BpmnQueries.removeUnconnectedElements(currentTestCase);
-			return currentTestCase;
+			return Pair.of(currentTestCase, AllPathsInfo.create(removedConnections));
 		}
 
 
@@ -100,9 +122,12 @@ public class CoverageByAllPathsGenerator implements IGenerator {
 
 
 
-		private void removeConditionsSelectedOutgoingFlows(
+		private List<SequenceFlow> removeConditionsSelectedOutgoingFlows(
 				List<ExclusiveGateway> conditions, int[] connectionIndexes,
 				BpmnModel currentTestCase) {
+			
+			List<SequenceFlow> removed = Lists.newArrayList();
+			
 			int conditionIndex = 0;
 			for (ExclusiveGateway c : conditions) {
 				ExclusiveGateway condition = BpmnQueries.getExclusiveGateway(currentTestCase, c);
@@ -111,7 +136,10 @@ public class CoverageByAllPathsGenerator implements IGenerator {
 				BpmnQueries.removeSequenceFlow(currentTestCase, removedConnection);
 				
 				conditionIndex++;
+				removed.add(removedConnection);
 			}
+			
+			return removed;
 		}
 
 
@@ -150,10 +178,17 @@ public class CoverageByAllPathsGenerator implements IGenerator {
 			return conditions;
 		}
 		
-		
-
-		
-
 	}
 }
 
+class AllPathsInfo extends GenerationInfo {
+	public List<String> connections;
+	
+	private AllPathsInfo(List<String> connections) {
+		this.connections = connections;
+	}
+	
+	public static AllPathsInfo create(List<SequenceFlow> connections) {
+		return new AllPathsInfo(BpmnQueries.toIdList(connections));
+	}
+}

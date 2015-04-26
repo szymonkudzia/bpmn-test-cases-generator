@@ -2,6 +2,7 @@ package com.edu.uj.sk.btcg.generation.generators.impl;
 
 import java.util.Iterator;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.activiti.bpmn.model.BpmnModel;
 import org.activiti.bpmn.model.FlowElement;
@@ -34,15 +35,25 @@ public class ManualTaskGenerator implements IGenerator {
 	
 	
 	
-	
-	
-	
-	
 	@Override
 	public boolean allTestRequirementsCovered(BpmnModel model,
 			List<GenerationInfo> generationInfos) {
-		// TODO Auto-generated method stub
-		return false;
+		
+		List<String> allTestRequirements =
+				new Generator(model).getAllTestRequirements();
+		
+		if (allTestRequirements.isEmpty()) return true;
+
+		
+		List<String> coveredTestRequirements =
+				generationInfos.stream()
+					.filter(i -> i instanceof ManualTaskInfo)
+					.map(i -> (ManualTaskInfo) i)
+					.map(i -> i.task)
+					.collect(Collectors.toList());
+		
+		
+		return coveredTestRequirements.containsAll(allTestRequirements);
 	}
 
 
@@ -60,6 +71,10 @@ public class ManualTaskGenerator implements IGenerator {
 			userTasks.addAll(BpmnQueries.selectAllOfType(originalModel, UserTask.class));
 			userTasks.addAll(BpmnQueries.selectAllOfType(originalModel, ManualTask.class));
 		}
+		
+		public List<String> getAllTestRequirements() {
+			return BpmnQueries.toIdList(userTasks);
+		}
 
 		@Override
 		public boolean hasNext() {
@@ -75,7 +90,20 @@ public class ManualTaskGenerator implements IGenerator {
 			
 			BpmnQueries.createAnnotationForElement(currentTestCase, ANNOTATION_TEXT, userTask);
 			
-			return Pair.of(currentTestCase, null);
+			return Pair.of(currentTestCase, ManualTaskInfo.create(userTask));
 		}
+	}
+}
+
+
+class ManualTaskInfo extends GenerationInfo {
+	public String task;
+
+	protected ManualTaskInfo(String task) {
+		this.task = task;
+	}
+
+	public static ManualTaskInfo create(FlowElement task) {
+		return new ManualTaskInfo(task.getId());
 	}
 }

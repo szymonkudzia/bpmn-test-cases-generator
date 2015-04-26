@@ -1,24 +1,29 @@
 package com.edu.uj.sk.btcg.generation.processors;
 
 import java.io.IOException;
-import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 import org.activiti.bpmn.model.BpmnModel;
 import org.apache.commons.lang3.tuple.Pair;
 
+import com.edu.uj.sk.btcg.bpmn.BpmnUtil;
 import com.edu.uj.sk.btcg.collections.CCollections;
 import com.edu.uj.sk.btcg.generation.generators.IGenerator;
 import com.edu.uj.sk.btcg.generation.generators.impl.GenerationInfo;
+import com.edu.uj.sk.btcg.logging.CLogger;
 import com.edu.uj.sk.btcg.persistance.TestCasePersister;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
 import com.google.common.collect.Multimap;
 
 public class MergingProcessor implements IProcessor {
+	private CLogger logger = CLogger.getLogger(MergingProcessor.class);
+	
 	private List<IGenerator> generators;
 	private String processorName;
 	private boolean optimizeResult;
@@ -38,20 +43,62 @@ public class MergingProcessor implements IProcessor {
 		Preconditions.checkNotNull(model);
 		Preconditions.checkNotNull(persister);
 		
+		logger.info("Generating models...");
+		
 		Multimap<BpmnModel, GenerationInfo> notFilteredResults = HashMultimap.create();
 		Pair<BpmnModel, List<GenerationInfo>> modelGenerationInfo = Pair.of(model, Lists.newArrayList());
 		
 		generateTestCases(modelGenerationInfo, notFilteredResults, generators.get(0), generators.subList(1, generators.size()));
 		
+		logger.info("Generation finished!");
 		
-		List<BpmnModel> models = Lists.newArrayList(notFilteredResults.keySet());
+		List<BpmnModel> models = selectSample(notFilteredResults);
 		List<List<GenerationInfo>> infos = getValuesInSameOrderAsModels(models, notFilteredResults);
 		
 		if (optimizeResult) {
+			logger.info("Optimization started...");
+			logger.info("Number of models: %s, number of combinations to check: %s", models.size(), Math.pow(2.0, models.size()));
+			
 			findMinimalSetCoveringAllTestRequirements(model, persister, models, infos);
+			
+			logger.info("Optimization finished. Models stored");
+			
 		} else {
+			logger.info("Storing generated models...");
 			store(persister, models);
+			
+			logger.info("Generated models stored");
 		}
+	}
+
+
+	private List<BpmnModel> selectSample(Multimap<BpmnModel, GenerationInfo> notFilteredResults) {
+		List<BpmnModel> models = Lists.newArrayList(removeDuplicates(notFilteredResults));
+
+//		if (models.size() < 14) 
+			return models;
+		
+//		Collections.shuffle(models);
+//		return models.subList(0, 13);
+	}
+	
+	private List<BpmnModel> removeDuplicates(
+			Multimap<BpmnModel, GenerationInfo> notFilteredResults) {
+		
+		final Map<String, Void> map = Maps.newHashMap();
+		
+		return notFilteredResults.keySet()
+			.stream()
+			.filter(m -> {
+				String key = BpmnUtil.toString(m);
+				
+				if (map.containsKey(key))
+					return false;
+				
+				map.put(key, null);
+				return true;
+			})
+			.collect(Collectors.toList());
 	}
 
 
@@ -59,9 +106,13 @@ public class MergingProcessor implements IProcessor {
 	private void findMinimalSetCoveringAllTestRequirements(BpmnModel model,
 			TestCasePersister persister, List<BpmnModel> models,
 			List<List<GenerationInfo>> infos) throws IOException {
-		List<List<Integer>> allCombinations = calculateAllPossibleCombinations(models.size());
 		
-		for (List<Integer> currentSet : allCombinations) {
+		Iterator<List<Integer>> powerSetIterator = 
+				CCollections.powerSetIterator(CCollections.range(models.size()));
+		
+		while (powerSetIterator.hasNext()) {
+			List<Integer> currentSet = powerSetIterator.next();
+			
 			List<GenerationInfo> currentInfoSet = pickInfosAndMergeAsSingleList(currentSet, infos);
 			
 			boolean found = allTestRequirementCovered(model, currentInfoSet);
@@ -182,14 +233,6 @@ public class MergingProcessor implements IProcessor {
 	
 	
 	
-
-	private List<List<Integer>> calculateAllPossibleCombinations(int size) {
-		List<List<Integer>> allCombinations = CCollections.powerSet(CCollections.range(size));
-		Collections.sort(allCombinations, (a, b) -> a.size() - b.size());
-		
-		return allCombinations;
-	}
-
 	
 	
 	private boolean allTestRequirementCovered(
@@ -198,6 +241,7 @@ public class MergingProcessor implements IProcessor {
 		
 		for (IGenerator generator : generators) {
 			if (!generator.allTestRequirementsCovered(model, currentInfoSet)) {
+				logger.info("Some TC from generator: %s are not covered!", generator.getClass().getName());
 				return false;
 			}
 		}
