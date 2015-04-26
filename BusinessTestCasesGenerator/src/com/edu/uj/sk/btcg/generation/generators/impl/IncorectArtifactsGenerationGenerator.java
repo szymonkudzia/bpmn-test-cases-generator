@@ -36,21 +36,54 @@ public class IncorectArtifactsGenerationGenerator implements IGenerator {
 	public boolean allTestRequirementsCovered(BpmnModel model,
 			List<GenerationInfo> generationInfos) {
 		
-		List<String> allTestRequirements =
-				new Generator(model).getAllTestRequirements();
+		List<String> allTestRequirements = allTestRequirements(model);
 		
 		if (allTestRequirements.isEmpty()) return true;
 
 		
+		List<String> coveredTestRequirements = coveredTestRequirements(generationInfos);
+		
+		
+		return coveredTestRequirements.containsAll(allTestRequirements);
+	}
+
+
+	@Override
+	public int countCoveredTestRequirementsNumber(BpmnModel model,
+			List<GenerationInfo> currentInfoSet) {
+		List<String> allTestRequirements = allTestRequirements(model);
+		int allCount = allTestRequirements.size();
+		
+		allTestRequirements.removeAll(coveredTestRequirements(currentInfoSet));
+		
+		return allCount - allTestRequirements.size();
+	}
+
+
+
+
+
+	private List<String> coveredTestRequirements(
+			List<GenerationInfo> generationInfos) {
 		List<String> coveredTestRequirements =
 				generationInfos.stream()
 					.filter(i -> i instanceof IncorrectArtifactsInfo)
 					.map(i -> (IncorrectArtifactsInfo) i)
 					.map(i -> i.task)
 					.collect(Collectors.toList());
-		
-		
-		return coveredTestRequirements.containsAll(allTestRequirements);
+		return coveredTestRequirements;
+	}
+
+
+
+
+
+
+
+	private List<String> allTestRequirements(BpmnModel model) {
+		List<String> allTestRequirements =
+				new Generator(model).getAllTestRequirements();
+		return allTestRequirements;
 	}
 
 

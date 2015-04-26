@@ -15,11 +15,19 @@ public class ProcessorsExecuter {
 	private static CLogger logger = CLogger.getLogger(ProcessorsExecuter.class);
 	
 	
-	public static void process(final List<IProcessor> processors, final boolean asSingleStrategy, final boolean optimizeResult, final BpmnModel model, final TestCasePersister persister) {
+	public static void process(
+			final List<IProcessor> processors, 
+			final boolean asSingleStrategy, 
+			final boolean fullOptimization, 
+			final boolean randomSamplingOptimization,
+			final int sampleSize,
+			final BpmnModel model, 
+			final TestCasePersister persister) {
+		
 		List<IProcessor> p = Lists.newArrayList(processors);
 		
 		if (asSingleStrategy) {
-			p = combineAsSingleStrategy(processors, optimizeResult);
+			p = combineAsSingleStrategy(processors, fullOptimization, randomSamplingOptimization, sampleSize);
 		}
 		
 		
@@ -40,11 +48,20 @@ public class ProcessorsExecuter {
 
 	private static List<IProcessor> combineAsSingleStrategy(
 			List<IProcessor> processors, 
-			boolean optimizeResult) {
+			boolean fullOptimization,
+			boolean randomSamplingOptimization,
+			int sampleSize) {
 		
 		List<IGenerator> generators = extractGeneratorsList(processors);
 		
-		return Lists.newArrayList(new MergingProcessor("all_combined", generators, optimizeResult));
+		MergingProcessor mergingProcessor = new MergingProcessor(
+				"all_combined", 
+				generators, 
+				fullOptimization, 
+				randomSamplingOptimization,
+				sampleSize);
+		
+		return Lists.newArrayList(mergingProcessor);
 	}
 
 

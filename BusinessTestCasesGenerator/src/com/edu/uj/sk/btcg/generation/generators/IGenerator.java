@@ -10,5 +10,8 @@ import com.edu.uj.sk.btcg.generation.generators.impl.GenerationInfo;
 
 public interface IGenerator {
 	Iterator<Pair<BpmnModel, GenerationInfo>> generate(BpmnModel originalModel);
+	
 	boolean allTestRequirementsCovered(BpmnModel model, List<GenerationInfo> generationInfos);
+	
+	int countCoveredTestRequirementsNumber(BpmnModel model, List<GenerationInfo> currentInfoSet);
 }

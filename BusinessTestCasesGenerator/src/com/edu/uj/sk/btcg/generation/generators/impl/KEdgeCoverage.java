@@ -47,20 +47,45 @@ public class KEdgeCoverage implements IGenerator {
 	public boolean allTestRequirementsCovered(BpmnModel model,
 			List<GenerationInfo> generationInfos) {
 		
-		List<List<String>> allTestRequirements = new It(model).getTestRequirements();
+		List<List<String>> allTestRequirements = allTestRequirements(model);
 		if (allTestRequirements.isEmpty()) return true;
 
 		
+		List<List<String>> coveredTestRequirements = coveredTestRequirements(generationInfos);
+		
+		
+		
+		return coveredTestRequirements.containsAll(allTestRequirements);
+	}
+
+	
+	@Override
+	public int countCoveredTestRequirementsNumber(BpmnModel model,
+			List<GenerationInfo> currentInfoSet) {
+		List<List<String>> allTestRequirements = allTestRequirements(model);
+		int allCount = allTestRequirements.size();
+		
+		allTestRequirements.removeAll(coveredTestRequirements(currentInfoSet));
+		
+		return allCount - allTestRequirements.size();
+	}
+	
+
+	private List<List<String>> coveredTestRequirements(
+			List<GenerationInfo> generationInfos) {
 		List<List<String>> coveredTestRequirements = generationInfos
 				.stream()
 				.filter(i -> i instanceof KEdgeInfo)
 				.map(i -> (KEdgeInfo) i)
 				.map(i -> i.path)
 				.collect(Collectors.toList());
-		
-		
-		
-		return coveredTestRequirements.containsAll(allTestRequirements);
+		return coveredTestRequirements;
+	}
+
+
+	private List<List<String>> allTestRequirements(BpmnModel model) {
+		List<List<String>> allTestRequirements = new It(model).getTestRequirements();
+		return allTestRequirements;
 	}
 
 

@@ -1,6 +1,7 @@
 package com.edu.uj.sk.btcg.generation.processors;
 
 import java.io.IOException;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -26,15 +27,25 @@ public class MergingProcessor implements IProcessor {
 	
 	private List<IGenerator> generators;
 	private String processorName;
-	private boolean optimizeResult;
+	private boolean fullOptimization;
+	private boolean randomSamplingOptimization;
+	private int sampleSize;
 	
-	public MergingProcessor(String processorName, List<IGenerator> generators, boolean optimizeResult) {
+	public MergingProcessor(
+			String processorName, 
+			List<IGenerator> generators, 
+			boolean fullOptimization, 
+			boolean randomSamplingOptimization, 
+			int sampleSize) {
+		
 		Preconditions.checkNotNull(generators);
 		Preconditions.checkArgument(!generators.isEmpty());
 
 		this.generators = generators;
 		this.processorName = processorName;
-		this.optimizeResult = optimizeResult;
+		this.fullOptimization = fullOptimization;
+		this.randomSamplingOptimization = randomSamplingOptimization;
+		this.sampleSize = sampleSize;
 	}
 	
 	
@@ -52,16 +63,27 @@ public class MergingProcessor implements IProcessor {
 		
 		logger.info("Generation finished!");
 		
-		List<BpmnModel> models = selectSample(notFilteredResults);
+		List<BpmnModel> models = removeDuplicates(notFilteredResults);
 		List<List<GenerationInfo>> infos = getValuesInSameOrderAsModels(models, notFilteredResults);
 		
-		if (optimizeResult) {
-			logger.info("Optimization started...");
+		if (fullOptimization) {
+			logger.info("Full optimization started...");
 			logger.info("Number of models: %s, number of combinations to check: %s", models.size(), Math.pow(2.0, models.size()));
 			
 			findMinimalSetCoveringAllTestRequirements(model, persister, models, infos);
 			
-			logger.info("Optimization finished. Models stored");
+			logger.info("Full optimization finished. Models stored");
+			
+		} else if (randomSamplingOptimization) {
+			models = selectSample(models);
+			infos = getValuesInSameOrderAsModels(models, notFilteredResults);
+			
+			logger.info("Random sampling optimization started...");
+			logger.info("Number of models: %s, number of combinations to check: %s", models.size(), Math.pow(2.0, models.size()));
+			
+			findMinimalSetWithBestCovering(model, persister, models, infos);
+			
+			logger.info("Random sampling optimization finished. Models stored");
 			
 		} else {
 			logger.info("Storing generated models...");
@@ -72,15 +94,7 @@ public class MergingProcessor implements IProcessor {
 	}
 
 
-	private List<BpmnModel> selectSample(Multimap<BpmnModel, GenerationInfo> notFilteredResults) {
-		List<BpmnModel> models = Lists.newArrayList(removeDuplicates(notFilteredResults));
-
-//		if (models.size() < 14) 
-			return models;
-		
-//		Collections.shuffle(models);
-//		return models.subList(0, 13);
-	}
+	
 	
 	private List<BpmnModel> removeDuplicates(
 			Multimap<BpmnModel, GenerationInfo> notFilteredResults) {
@@ -102,6 +116,11 @@ public class MergingProcessor implements IProcessor {
 	}
 
 
+	private List<BpmnModel> selectSample(List<BpmnModel> models) {
+		Collections.shuffle(models);
+		return models.subList(0, sampleSize);
+	}
+	
 	
 	private void findMinimalSetCoveringAllTestRequirements(BpmnModel model,
 			TestCasePersister persister, List<BpmnModel> models,
@@ -124,6 +143,36 @@ public class MergingProcessor implements IProcessor {
 			}
 		}
 	}
+	
+	
+	
+	private void findMinimalSetWithBestCovering(
+			BpmnModel model,
+			TestCasePersister persister, 
+			List<BpmnModel> models,
+			List<List<GenerationInfo>> infos) throws IOException {
+		
+		int bestCoveredTestRequirementsNumber = 0;
+		List<Integer> bestSet = Lists.newArrayList();
+		
+		Iterator<List<Integer>> powerSetIterator = 
+				CCollections.powerSetIterator(CCollections.range(models.size()));
+		while (powerSetIterator.hasNext()) {
+			List<Integer> currentSet = powerSetIterator.next();
+			
+			List<GenerationInfo> currentInfoSet = pickInfosAndMergeAsSingleList(currentSet, infos);
+			
+			int coveredTestRequirementsNumber = countCoveredTestRequirementsNumber(model, currentInfoSet);
+			
+			if (coveredTestRequirementsNumber > bestCoveredTestRequirementsNumber) {
+				bestCoveredTestRequirementsNumber = coveredTestRequirementsNumber;
+				bestSet = currentSet;
+			}
+		}
+		
+		
+		storeFoundBestTestCases(persister, models, bestSet);
+	}
 
 
 
@@ -136,6 +185,9 @@ public class MergingProcessor implements IProcessor {
 	
 
 	
+
+
+
 
 
 
@@ -247,6 +299,18 @@ public class MergingProcessor implements IProcessor {
 		}
 		
 		return true;
+	}
+	
+	private int countCoveredTestRequirementsNumber(
+			BpmnModel model,
+			List<GenerationInfo> currentInfoSet) {
+		
+		int number = 0;
+		for (IGenerator generator : generators) {
+			number += generator.countCoveredTestRequirementsNumber(model, currentInfoSet);
+		}
+		
+		return number;
 	}
 	
 	private void storeFoundBestTestCases(

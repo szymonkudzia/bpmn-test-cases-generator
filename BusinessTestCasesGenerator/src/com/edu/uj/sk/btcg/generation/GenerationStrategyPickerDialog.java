@@ -32,8 +32,13 @@ public class GenerationStrategyPickerDialog extends Dialog {
 	private boolean asSingle = false;
 	private Button asSingleOne;
 	
-	private boolean optimize = false;
+	private boolean fullOptimization = false;
 	private Button optimizeRes;
+	
+	private boolean randomSamplingOptimization = false;
+	private Button randomSamplingOptimizeRes;
+	private int sampleSize;
+	private Text sampleSizeInput;
 	
 	private Button naiveEdgeCoverage;
 	private Button manualTask;
@@ -59,8 +64,16 @@ public class GenerationStrategyPickerDialog extends Dialog {
 		return asSingle;
 	}
 	
-	public boolean optimizeResult() {
-		return optimize;
+	public boolean fullOptimization() {
+		return fullOptimization;
+	}
+	
+	public boolean randomSamplingOptimization() {
+		return randomSamplingOptimization;
+	}
+	
+	public int sampleSize() {
+		return sampleSize;
 	}
 	
 	
@@ -74,17 +87,42 @@ public class GenerationStrategyPickerDialog extends Dialog {
 		
 
 		asSingleOne = createCheckBox(container, "Combine strategies as single one");
-		optimizeRes = createCheckBox(container, "Optimize result set");
+		optimizeRes = createRadioButton(container, "Perform full optimization of result set");
 		optimizeRes.setSelection(true);
 		optimizeRes.setEnabled(false);
+		
+		
+		randomSamplingOptimizeRes = createRadioButton(container, "Perform random sampling optimization of result set");
+		randomSamplingOptimizeRes.setEnabled(false);
+		
+		
+		Composite rsc = createHorizontalPanel(container);
+	    
+	    new Label(rsc, SWT.LEFT);
+	    
+		Label rsl = new Label(rsc, SWT.LEFT);
+		rsl.setText("Sample size: ");
+
+		sampleSizeInput = new Text(rsc, SWT.BORDER);
+		sampleSizeInput.setEnabled(false);
+		sampleSizeInput.setText("12");
+		sampleSizeInput.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+		
+		randomSamplingOptimizeRes.addSelectionListener(selectHandler(e -> {
+			sampleSizeInput.setEnabled(randomSamplingOptimizeRes.getSelection());
+		}));
 		
 		asSingleOne.addSelectionListener(selectHandler(e -> {
 			if (asSingleOne.getSelection()) {
 				optimizeRes.setEnabled(true);
+				randomSamplingOptimizeRes.setEnabled(true);
 			} else {
 				optimizeRes.setEnabled(false);
+				randomSamplingOptimizeRes.setEnabled(false);
 			}
 		}));
+		
+		
 		
 		
 		createHorizontalSeparator();
@@ -172,7 +210,7 @@ public class GenerationStrategyPickerDialog extends Dialog {
 
 	@Override
 	protected Point getInitialSize() {
-		return new Point(450, 700);
+		return new Point(500, 750);
 	}
 	
 	private Button createCheckBox(Composite container, String label) {
@@ -181,10 +219,28 @@ public class GenerationStrategyPickerDialog extends Dialog {
 		
 		return button;
 	}
+	
+	private Button createRadioButton(Composite container, String label) {
+		Button button = new Button(container, SWT.RADIO);
+		button.setText(label);
+		
+		return button;
+	}
 
 	@Override
 	protected void okPressed() {
 		int k = 1;
+		
+		if (sampleSizeInput.isEnabled()) {
+			try {
+				sampleSize = Integer.parseInt(sampleSizeInput.getText());
+				if (sampleSize <= 0) throw new IllegalArgumentException();
+				
+			} catch (Throwable e) {
+				MessageDialog.openError(getParentShell(), "Error", "Sample size is not valid number! Only Integers greater than 0 are acceptable.");
+				return;
+			}
+		}
 		
 		if (kInput.isEnabled()) {
 			try {
@@ -241,8 +297,10 @@ public class GenerationStrategyPickerDialog extends Dialog {
 		
 		asSingle = asSingleOne.getSelection();
 		
-		if (asSingle)
-			optimize = optimizeRes.getSelection();
+		if (asSingle) {
+			fullOptimization = optimizeRes.getSelection();
+			randomSamplingOptimization = randomSamplingOptimizeRes.getSelection();
+		}
 		
 		super.okPressed();
 	}
