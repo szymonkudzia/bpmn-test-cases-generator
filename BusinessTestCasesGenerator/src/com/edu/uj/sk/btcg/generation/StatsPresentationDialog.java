@@ -40,7 +40,7 @@ public class StatsPresentationDialog extends Dialog {
 		
 		if (!uncombinedStrategiesStats.isEmpty()) {
 			new Label(container, SWT.NONE).setText("  "); // separator
-			new Label(container, SWT.NONE).setText("Results if strategies would not be combined: ");
+			new Label(container, SWT.NONE).setText("Results if strategies have not been combined: ");
 			
 			createTable(uncombinedStrategiesStats);
 		}
