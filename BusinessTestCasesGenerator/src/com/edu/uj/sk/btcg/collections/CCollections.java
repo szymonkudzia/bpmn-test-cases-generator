@@ -124,35 +124,21 @@ public class CCollections {
 	public static <T> Iterator<List<T>> powerSetIterator(final Collection<T> collection) {
 		return new Iterator<List<T>>() {
 			List<T> source = Lists.newArrayList(collection);
-			ArrayList<Integer> indices = Lists.newArrayList();
-			
+			ArrayList<Integer> indices = Lists.newArrayList(-2);
 			
 			@Override
 			public boolean hasNext() {
 				int compareResult = indices.size() - source.size();
-				
-				if (compareResult < 0) 
-					return true;
-				
-				return false;
+				return compareResult < 0;
 			}
 
 			@Override
-			public List<T> next() {
-				if (indices.isEmpty()) {
-					indices.add(-1);
-					return Lists.newArrayList();
-				}
-				
+			public List<T> next() {			
 				updateIndices();
-								
 			    return pickSubList();
-			}
-			
+			}			
 			
 			private void updateIndices() {
-				boolean addNew = false;
-				
 				int lastIdx = getLastIndex(source);
 				for (int i = getLastIndex(indices), ri = 0; i >= 0; --i, ++ri) {
 					int idx = indices.get(i) + 1;
@@ -162,21 +148,17 @@ public class CCollections {
 						break;
 						
 					} else if (i == 0) {
-						addNew = true;
+						indices = Lists.newArrayList(range(indices.size() + 1));
 						break;
 					}
 				}
-				
-				if (addNew)
-					indices = Lists.newArrayList(range(indices.size() + 1));
 			}
 			
 			private List<T> pickSubList() {
-				final List<T> sublist = Lists.newArrayList();
-				
-				indices.forEach(i -> sublist.add(source.get(i)));
-						
-				return sublist;
+				return indices.stream()
+						.filter(i -> i >= 0)
+						.map(i -> source.get(i))
+						.collect(Collectors.toList());
 			}
 		};
 	}
