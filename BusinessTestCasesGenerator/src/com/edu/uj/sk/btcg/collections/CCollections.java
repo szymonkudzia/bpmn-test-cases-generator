@@ -121,6 +121,7 @@ public class CCollections {
 //	}
 	
 	
+	
 	public static <T> Iterator<List<T>> powerSetIterator(final Collection<T> collection) {
 		return new Iterator<List<T>>() {
 			List<T> source = Lists.newArrayList(collection);
@@ -137,20 +138,38 @@ public class CCollections {
 				updateIndices();
 			    return pickSubList();
 			}			
-			
-			private void updateIndices() {
-				int lastIdx = getLastIndex(source);
-				for (int i = getLastIndex(indices), ri = 0; i >= 0; --i, ++ri) {
-					int idx = indices.get(i) + 1;
-					
-					if (idx <= lastIdx - ri) {
-						indices.set(i, idx);
-						break;
 						
-					} else if (i == 0) {
-						indices = Lists.newArrayList(range(indices.size() + 1));
-						break;
+			private void updateIndices() {
+				int lastSourceIdx = getLastIndex(source);
+				int lastIndicesIdx = getLastIndex(indices);
+				
+				if (indices.get(lastIndicesIdx) < lastSourceIdx)
+					indices.set(lastIndicesIdx, indices.get(lastIndicesIdx) + 1);
+				else {
+					for (int i = lastIndicesIdx; i >= 0; --i) {
+						if (i == 0) {
+							int idx = indices.get(0);
+							if (idx < source.size() - indices.size()) {
+								indices.set(0, idx + 1);
+								return;
+							}
+							
+						} else if (indices.get(i) > 1 + indices.get(i - 1)) {
+							int newIdx = indices.get(i - 1) + 1;
+							indices.set(i, newIdx + 1);
+							indices.set(i - 1, newIdx);
+							
+							for (; i < indices.size() - 1; ++i) {
+								if (indices.get(i) + 1 < indices.get(i + 1)) {
+									indices.set(i + 1, indices.get(i) + 1);
+								}
+							}
+							
+							return;
+						}
 					}
+					
+					indices = Lists.newArrayList(range(indices.size() + 1));
 				}
 			}
 			

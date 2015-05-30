@@ -37,14 +37,22 @@ public class CCollectionsTest {
 			Lists.newArrayList(1),
 			Lists.newArrayList(2),
 			Lists.newArrayList(3),
+			Lists.newArrayList(4),
 			Lists.newArrayList(1, 2),
 			Lists.newArrayList(1, 3),
+			Lists.newArrayList(1, 4),
 			Lists.newArrayList(2, 3),
-			Lists.newArrayList(1, 2, 3)
+			Lists.newArrayList(2, 4),
+			Lists.newArrayList(3, 4),
+			Lists.newArrayList(1, 2, 3),
+			Lists.newArrayList(1, 2, 4),
+			Lists.newArrayList(1, 3, 4),
+			Lists.newArrayList(2, 3, 4),
+			Lists.newArrayList(1, 2, 3, 4)
 		);
 		
 		Iterator<List<Integer>> powerSetIterator = 
-				CCollections.powerSetIterator(Lists.newArrayList(1, 2, 3));
+				CCollections.powerSetIterator(Lists.newArrayList(1, 2, 3, 4));
 		
 		int iteration = 0;
 		while (powerSetIterator.hasNext()) {
@@ -58,15 +66,20 @@ public class CCollectionsTest {
 	}
 	
 	@Test
-	public void a() {
+	public void assertThatNumberOfSubSetsEqual2PowerOfN() {
+		int N = 16;
 		
 		Iterator<List<Integer>> powerSetIterator = 
-				CCollections.powerSetIterator(Lists.newArrayList(1, 2, 3));
+				CCollections.powerSetIterator(CCollections.range(N));
 		
+		int count = 0;
 		while (powerSetIterator.hasNext()) {
+			++count;
 			List<Integer> combination = powerSetIterator.next();
 			
 			System.out.println(combination);
 		}
+		
+		assertThat(count).isEqualTo(((Double)Math.pow(2.0, N)).intValue());
 	}
 }
