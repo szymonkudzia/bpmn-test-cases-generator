@@ -6,9 +6,11 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import org.activiti.bpmn.model.BpmnModel;
 import org.apache.commons.lang3.tuple.Pair;
+import org.apache.commons.lang3.tuple.Triple;
 
 import com.edu.uj.sk.btcg.bpmn.BpmnUtil;
 import com.edu.uj.sk.btcg.collections.CCollections;
@@ -27,6 +29,7 @@ public class MergingProcessor implements IProcessor {
 	
 	private List<IGenerator> generators;
 	private String processorName;
+	private boolean greedyOptimization;
 	private boolean fullOptimization;
 	private boolean randomSamplingOptimization;
 	private int sampleSize;
@@ -34,6 +37,7 @@ public class MergingProcessor implements IProcessor {
 	public MergingProcessor(
 			String processorName, 
 			List<IGenerator> generators, 
+			boolean greedyOptimization,
 			boolean fullOptimization, 
 			boolean randomSamplingOptimization, 
 			int sampleSize) {
@@ -43,6 +47,7 @@ public class MergingProcessor implements IProcessor {
 
 		this.generators = generators;
 		this.processorName = processorName;
+		this.greedyOptimization = greedyOptimization;
 		this.fullOptimization = fullOptimization;
 		this.randomSamplingOptimization = randomSamplingOptimization;
 		this.sampleSize = sampleSize;
@@ -66,7 +71,12 @@ public class MergingProcessor implements IProcessor {
 		List<BpmnModel> models = removeDuplicates(notFilteredResults);
 		List<List<GenerationInfo>> infos = getValuesInSameOrderAsModels(models, notFilteredResults);
 		
-		if (fullOptimization) {
+		if (greedyOptimization) {
+			greedyOptimization(models, infos, model, persister);
+			
+			
+			
+		} else if (fullOptimization) {
 			logger.info("Full optimization started...");
 			logger.info("Number of models: %s, number of combinations to check: %s", models.size(), Math.pow(2.0, models.size()));
 			
@@ -90,6 +100,37 @@ public class MergingProcessor implements IProcessor {
 			store(persister, models);
 			
 			logger.info("Generated models stored");
+		}
+	}
+
+
+	private void greedyOptimization(
+			final List<BpmnModel> models,
+			final List<List<GenerationInfo>> infos,
+			final BpmnModel original,
+			TestCasePersister persister) throws IOException {
+		
+		List<Triple<BpmnModel, List<GenerationInfo>, Integer>> mi = IntStream.range(0, models.size())
+		.mapToObj(i -> Triple.of(models.get(i), infos.get(i), countCoveredTestRequirementsNumber(models.get(i), infos.get(i))))
+		.collect(Collectors.toList());
+		
+		mi = mi.stream()
+			.sorted((a1, a2) -> a2.getRight() - a1.getRight())
+			.collect(Collectors.toList());
+		
+		List<GenerationInfo> infosTotal = Lists.newArrayList();
+		for (int i = 0; i < mi.size(); ++i) {
+			Triple<BpmnModel, List<GenerationInfo>, Integer> modelInfo = mi.get(i);
+			
+			
+			if (infosTotal.containsAll(modelInfo.getMiddle()))
+				continue;
+			
+			infosTotal.addAll(modelInfo.getMiddle());
+			
+			persister.persist(processorName, modelInfo.getLeft());
+			if (allTestRequirementCovered(original, infosTotal))
+				break;
 		}
 	}
 

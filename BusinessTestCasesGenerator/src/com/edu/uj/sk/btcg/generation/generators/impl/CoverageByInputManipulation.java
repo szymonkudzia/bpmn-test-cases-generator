@@ -492,4 +492,32 @@ class InputManipulationInfo extends GenerationInfo {
 	public static InputManipulationInfo create(Set<String> variableValue) {
 		return new InputManipulationInfo(Lists.newArrayList(variableValue));
 	}
+
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		result = prime * result
+				+ ((variableValue == null) ? 0 : variableValue.hashCode());
+		return result;
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj)
+			return true;
+		if (obj == null)
+			return false;
+		if (getClass() != obj.getClass())
+			return false;
+		InputManipulationInfo other = (InputManipulationInfo) obj;
+		if (variableValue == null) {
+			if (other.variableValue != null)
+				return false;
+		} else if (!variableValue.equals(other.variableValue))
+			return false;
+		return true;
+	}
+	
+	
 }

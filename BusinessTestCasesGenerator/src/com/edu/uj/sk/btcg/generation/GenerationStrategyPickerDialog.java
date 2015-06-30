@@ -32,7 +32,10 @@ public class GenerationStrategyPickerDialog extends Dialog {
 	private boolean asSingle = false;
 	private Button asSingleOne;
 	
-	Button noOptimization;
+	private Button noOptimization;
+	
+	private boolean greadyOptimization = false;
+	private Button greadyOptimizationButton;
 	
 	private boolean fullOptimization = false;
 	private Button optimizeRes;
@@ -66,6 +69,10 @@ public class GenerationStrategyPickerDialog extends Dialog {
 		return asSingle;
 	}
 	
+	public boolean greadyOptimization() {
+		return greadyOptimization;
+	}
+	
 	public boolean fullOptimization() {
 		return fullOptimization;
 	}
@@ -93,6 +100,10 @@ public class GenerationStrategyPickerDialog extends Dialog {
 		noOptimization.setEnabled(false);
 		noOptimization.setSelection(true);
 		
+		greadyOptimizationButton = createRadioButton(container, "Perform greedy optimalization");
+		greadyOptimizationButton.setEnabled(false);
+		
+				
 		optimizeRes = createRadioButton(container, "Perform full optimization of result set");
 		optimizeRes.setSelection(false);
 		optimizeRes.setEnabled(false);
@@ -121,10 +132,12 @@ public class GenerationStrategyPickerDialog extends Dialog {
 		asSingleOne.addSelectionListener(selectHandler(e -> {
 			if (asSingleOne.getSelection()) {
 				optimizeRes.setEnabled(true);
+				greadyOptimizationButton.setEnabled(true);
 				randomSamplingOptimizeRes.setEnabled(true);
 				noOptimization.setEnabled(true);
 			} else {
 				optimizeRes.setEnabled(false);
+				greadyOptimizationButton.setEnabled(false);
 				randomSamplingOptimizeRes.setEnabled(false);
 				noOptimization.setEnabled(false);
 			}
@@ -308,6 +321,7 @@ public class GenerationStrategyPickerDialog extends Dialog {
 		if (asSingle) {
 			fullOptimization = optimizeRes.getSelection();
 			randomSamplingOptimization = randomSamplingOptimizeRes.getSelection();
+			greadyOptimization = greadyOptimizationButton.getSelection();
 		}
 		
 		super.okPressed();

@@ -155,4 +155,31 @@ class CorruptedOutMessageInfo extends GenerationInfo {
 	public static CorruptedOutMessageInfo create(ServiceTask senders) {
 		return new CorruptedOutMessageInfo(senders.getId());
 	}
+
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + ((senders == null) ? 0 : senders.hashCode());
+		return result;
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj)
+			return true;
+		if (obj == null)
+			return false;
+		if (getClass() != obj.getClass())
+			return false;
+		CorruptedOutMessageInfo other = (CorruptedOutMessageInfo) obj;
+		if (senders == null) {
+			if (other.senders != null)
+				return false;
+		} else if (!senders.equals(other.senders))
+			return false;
+		return true;
+	}
+	
+	
 }

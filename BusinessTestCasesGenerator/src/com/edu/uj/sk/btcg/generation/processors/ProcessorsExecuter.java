@@ -18,6 +18,7 @@ public class ProcessorsExecuter {
 	public static void process(
 			final List<IProcessor> processors, 
 			final boolean asSingleStrategy, 
+			final boolean greedyOptimization,
 			final boolean fullOptimization, 
 			final boolean randomSamplingOptimization,
 			final int sampleSize,
@@ -27,7 +28,7 @@ public class ProcessorsExecuter {
 		List<IProcessor> p = Lists.newArrayList(processors);
 		
 		if (asSingleStrategy) {
-			p = combineAsSingleStrategy(processors, fullOptimization, randomSamplingOptimization, sampleSize);
+			p = combineAsSingleStrategy(processors, greedyOptimization, fullOptimization, randomSamplingOptimization, sampleSize);
 		}
 		
 		
@@ -48,6 +49,7 @@ public class ProcessorsExecuter {
 
 	private static List<IProcessor> combineAsSingleStrategy(
 			List<IProcessor> processors, 
+			boolean greedyOptimization,
 			boolean fullOptimization,
 			boolean randomSamplingOptimization,
 			int sampleSize) {
@@ -57,6 +59,7 @@ public class ProcessorsExecuter {
 		MergingProcessor mergingProcessor = new MergingProcessor(
 				"all_combined", 
 				generators, 
+				greedyOptimization,
 				fullOptimization, 
 				randomSamplingOptimization,
 				sampleSize);

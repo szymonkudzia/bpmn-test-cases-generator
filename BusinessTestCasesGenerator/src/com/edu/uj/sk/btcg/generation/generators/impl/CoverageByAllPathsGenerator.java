@@ -218,4 +218,32 @@ class AllPathsInfo extends GenerationInfo {
 	public static AllPathsInfo create(List<SequenceFlow> connections) {
 		return new AllPathsInfo(BpmnQueries.toIdList(connections));
 	}
+
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		result = prime * result
+				+ ((connections == null) ? 0 : connections.hashCode());
+		return result;
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj)
+			return true;
+		if (obj == null)
+			return false;
+		if (getClass() != obj.getClass())
+			return false;
+		AllPathsInfo other = (AllPathsInfo) obj;
+		if (connections == null) {
+			if (other.connections != null)
+				return false;
+		} else if (!connections.equals(other.connections))
+			return false;
+		return true;
+	}
+	
+	
 }

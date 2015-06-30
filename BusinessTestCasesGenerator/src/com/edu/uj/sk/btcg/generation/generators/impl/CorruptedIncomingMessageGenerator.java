@@ -156,4 +156,32 @@ class CorruptedInMessageInfo extends GenerationInfo {
 	public static CorruptedInMessageInfo create(IntermediateCatchEvent receivers) {
 		return new CorruptedInMessageInfo(receivers.getId());
 	}
+
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		result = prime * result
+				+ ((receiver == null) ? 0 : receiver.hashCode());
+		return result;
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj)
+			return true;
+		if (obj == null)
+			return false;
+		if (getClass() != obj.getClass())
+			return false;
+		CorruptedInMessageInfo other = (CorruptedInMessageInfo) obj;
+		if (receiver == null) {
+			if (other.receiver != null)
+				return false;
+		} else if (!receiver.equals(other.receiver))
+			return false;
+		return true;
+	}
+	
+	
 }

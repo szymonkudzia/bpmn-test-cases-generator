@@ -146,4 +146,32 @@ class LockInParallelGatewayInfo extends GenerationInfo {
 	public static LockInParallelGatewayInfo create(SequenceFlow connection) {
 		return new LockInParallelGatewayInfo(connection.getId());
 	}
+
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		result = prime * result
+				+ ((connection == null) ? 0 : connection.hashCode());
+		return result;
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj)
+			return true;
+		if (obj == null)
+			return false;
+		if (getClass() != obj.getClass())
+			return false;
+		LockInParallelGatewayInfo other = (LockInParallelGatewayInfo) obj;
+		if (connection == null) {
+			if (other.connection != null)
+				return false;
+		} else if (!connection.equals(other.connection))
+			return false;
+		return true;
+	}
+	
+	
 }

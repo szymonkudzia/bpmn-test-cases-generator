@@ -79,7 +79,7 @@ public class BestStrategyCombinationsFinder {
 					TestCasePersister persister = new TestCasePersister(new File(outputDirectory, "PermIdx_" + index));
 					
 					for (BpmnModel model : models) {
-						ProcessorsExecuter.process(permutation, true, true, false, 0, model, persister);
+						ProcessorsExecuter.process(permutation, true, false, true, false, 0, model, persister);
 					}
 					
 					Stats stats = new Stats("", 0, 0);

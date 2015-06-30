@@ -144,4 +144,31 @@ class RetrivingInformationFailed extends GenerationInfo {
 	public static RetrivingInformationFailed create(FlowElement task) {
 		return new RetrivingInformationFailed(task.getId());
 	}
+
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + ((task == null) ? 0 : task.hashCode());
+		return result;
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj)
+			return true;
+		if (obj == null)
+			return false;
+		if (getClass() != obj.getClass())
+			return false;
+		RetrivingInformationFailed other = (RetrivingInformationFailed) obj;
+		if (task == null) {
+			if (other.task != null)
+				return false;
+		} else if (!task.equals(other.task))
+			return false;
+		return true;
+	}
+	
+	
 }
