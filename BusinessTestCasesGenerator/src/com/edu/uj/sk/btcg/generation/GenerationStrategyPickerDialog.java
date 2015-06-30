@@ -32,6 +32,8 @@ public class GenerationStrategyPickerDialog extends Dialog {
 	private boolean asSingle = false;
 	private Button asSingleOne;
 	
+	Button noOptimization;
+	
 	private boolean fullOptimization = false;
 	private Button optimizeRes;
 	
@@ -87,8 +89,12 @@ public class GenerationStrategyPickerDialog extends Dialog {
 		
 
 		asSingleOne = createCheckBox(container, "Combine strategies as single one");
+		noOptimization = createRadioButton(container, "Without optimalization");
+		noOptimization.setEnabled(false);
+		noOptimization.setSelection(true);
+		
 		optimizeRes = createRadioButton(container, "Perform full optimization of result set");
-		optimizeRes.setSelection(true);
+		optimizeRes.setSelection(false);
 		optimizeRes.setEnabled(false);
 		
 		
@@ -116,9 +122,11 @@ public class GenerationStrategyPickerDialog extends Dialog {
 			if (asSingleOne.getSelection()) {
 				optimizeRes.setEnabled(true);
 				randomSamplingOptimizeRes.setEnabled(true);
+				noOptimization.setEnabled(true);
 			} else {
 				optimizeRes.setEnabled(false);
 				randomSamplingOptimizeRes.setEnabled(false);
+				noOptimization.setEnabled(false);
 			}
 		}));
 		

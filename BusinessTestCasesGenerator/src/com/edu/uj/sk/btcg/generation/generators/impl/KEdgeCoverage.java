@@ -321,7 +321,7 @@ public class KEdgeCoverage implements IGenerator {
 		private StartEvent selectStartEvent(BpmnModel currentTestCase) {
 			List<StartEvent> startEvents = BpmnQueries.selectAllOfType(currentTestCase, StartEvent.class);
 			
-			Preconditions.checkArgument(!startEvents.isEmpty());
+			Preconditions.checkArgument(!startEvents.isEmpty(), "No start event in the model");
 			
 			return startEvents.get(0);
 		}

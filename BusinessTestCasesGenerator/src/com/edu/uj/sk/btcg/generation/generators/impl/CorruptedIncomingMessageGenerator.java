@@ -23,7 +23,7 @@ public class CorruptedIncomingMessageGenerator implements IGenerator {
 			+ "3. Has correct format but contains incorrect data.\n\n"
 			+ "4. Holds data for different entity (but correct data).\n\n"
 			+ "5. Timeout before receiving message\n\n"
-			+ "6. Sender takes lot of time to sent it.\n\n"
+			+ "6. It takes a lot of time for sender to send it.\n\n"
 			+ "7. Data has poor quality.\n\n"
 			;
 	
