@@ -19,16 +19,14 @@ public class ProcessorsExecuter {
 			final List<IProcessor> processors, 
 			final boolean asSingleStrategy, 
 			final boolean greedyOptimization,
-			final boolean fullOptimization, 
-			final boolean randomSamplingOptimization,
-			final int sampleSize,
+			final boolean greedy2Optimization, 
 			final BpmnModel model, 
 			final TestCasePersister persister) {
 		
 		List<IProcessor> p = Lists.newArrayList(processors);
 		
 		if (asSingleStrategy) {
-			p = combineAsSingleStrategy(processors, greedyOptimization, fullOptimization, randomSamplingOptimization, sampleSize);
+			p = combineAsSingleStrategy(processors, greedyOptimization, greedy2Optimization);
 		}
 		
 		
@@ -50,9 +48,7 @@ public class ProcessorsExecuter {
 	private static List<IProcessor> combineAsSingleStrategy(
 			List<IProcessor> processors, 
 			boolean greedyOptimization,
-			boolean fullOptimization,
-			boolean randomSamplingOptimization,
-			int sampleSize) {
+			boolean greedy2Optimization) {
 		
 		List<IGenerator> generators = extractGeneratorsList(processors);
 		
@@ -60,9 +56,7 @@ public class ProcessorsExecuter {
 				"all_combined", 
 				generators, 
 				greedyOptimization,
-				fullOptimization, 
-				randomSamplingOptimization,
-				sampleSize);
+				greedy2Optimization);
 		
 		return Lists.newArrayList(mergingProcessor);
 	}

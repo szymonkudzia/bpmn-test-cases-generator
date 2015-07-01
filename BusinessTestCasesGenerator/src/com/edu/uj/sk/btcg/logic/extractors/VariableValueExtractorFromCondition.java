@@ -1,6 +1,7 @@
 package com.edu.uj.sk.btcg.logic.extractors;
 
 import java.util.Optional;
+import java.util.Random;
 import java.util.UUID;
 
 import org.activiti.bpmn.model.SequenceFlow;
@@ -14,6 +15,7 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Multimap;
 
 public class VariableValueExtractorFromCondition extends AbstractVariableValueExtractor<SequenceFlow>{
+	private static String random = UUID.randomUUID().toString().replaceAll("-", "");
 	private Tokenizer tokenizer = Tokenizer.create();
 	
 	private VariableValueExtractorFromCondition() {
@@ -150,7 +152,7 @@ public class VariableValueExtractorFromCondition extends AbstractVariableValueEx
 			possibleValues.put(variable, null);
 		} else {
 			possibleValues.put(variable, value.replaceAll("\"", ""));
-			possibleValues.put(variable, UUID.randomUUID().toString().replaceAll("-", ""));
+			possibleValues.put(variable, random);
 			possibleValues.put(variable, "");
 			possibleValues.put(variable, null);
 		}

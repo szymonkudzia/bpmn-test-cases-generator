@@ -37,13 +37,9 @@ public class GenerationStrategyPickerDialog extends Dialog {
 	private boolean greadyOptimization = false;
 	private Button greadyOptimizationButton;
 	
-	private boolean fullOptimization = false;
-	private Button optimizeRes;
+	private boolean greedy2Optimization = false;
+	private Button greedy2OptimizationButton;
 	
-	private boolean randomSamplingOptimization = false;
-	private Button randomSamplingOptimizeRes;
-	private int sampleSize;
-	private Text sampleSizeInput;
 	
 	private Button naiveEdgeCoverage;
 	private Button manualTask;
@@ -73,16 +69,8 @@ public class GenerationStrategyPickerDialog extends Dialog {
 		return greadyOptimization;
 	}
 	
-	public boolean fullOptimization() {
-		return fullOptimization;
-	}
-	
-	public boolean randomSamplingOptimization() {
-		return randomSamplingOptimization;
-	}
-	
-	public int sampleSize() {
-		return sampleSize;
+	public boolean greedy2Optimization() {
+		return greedy2Optimization;
 	}
 	
 	
@@ -104,41 +92,20 @@ public class GenerationStrategyPickerDialog extends Dialog {
 		greadyOptimizationButton.setEnabled(false);
 		
 				
-		optimizeRes = createRadioButton(container, "Perform full optimization of result set");
-		optimizeRes.setSelection(false);
-		optimizeRes.setEnabled(false);
+		greedy2OptimizationButton = createRadioButton(container, "Perform greedy^2 optimalization");
+		greedy2OptimizationButton.setSelection(false);
+		greedy2OptimizationButton.setEnabled(false);
 		
 		
-		randomSamplingOptimizeRes = createRadioButton(container, "Perform random sampling optimization of result set");
-		randomSamplingOptimizeRes.setEnabled(false);
-		
-		
-		Composite rsc = createHorizontalPanel(container);
-	    
-	    new Label(rsc, SWT.LEFT);
-	    
-		Label rsl = new Label(rsc, SWT.LEFT);
-		rsl.setText("Sample size: ");
-
-		sampleSizeInput = new Text(rsc, SWT.BORDER);
-		sampleSizeInput.setEnabled(false);
-		sampleSizeInput.setText("12");
-		sampleSizeInput.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
-		
-		randomSamplingOptimizeRes.addSelectionListener(selectHandler(e -> {
-			sampleSizeInput.setEnabled(randomSamplingOptimizeRes.getSelection());
-		}));
 		
 		asSingleOne.addSelectionListener(selectHandler(e -> {
 			if (asSingleOne.getSelection()) {
-				optimizeRes.setEnabled(true);
+				greedy2OptimizationButton.setEnabled(true);
 				greadyOptimizationButton.setEnabled(true);
-				randomSamplingOptimizeRes.setEnabled(true);
 				noOptimization.setEnabled(true);
 			} else {
-				optimizeRes.setEnabled(false);
+				greedy2OptimizationButton.setEnabled(false);
 				greadyOptimizationButton.setEnabled(false);
-				randomSamplingOptimizeRes.setEnabled(false);
 				noOptimization.setEnabled(false);
 			}
 		}));
@@ -252,17 +219,6 @@ public class GenerationStrategyPickerDialog extends Dialog {
 	protected void okPressed() {
 		int k = 1;
 		
-		if (sampleSizeInput.isEnabled()) {
-			try {
-				sampleSize = Integer.parseInt(sampleSizeInput.getText());
-				if (sampleSize <= 0) throw new IllegalArgumentException();
-				
-			} catch (Throwable e) {
-				MessageDialog.openError(getParentShell(), "Error", "Sample size is not valid number! Only Integers greater than 0 are acceptable.");
-				return;
-			}
-		}
-		
 		if (kInput.isEnabled()) {
 			try {
 				k = Integer.parseInt(kInput.getText());
@@ -319,8 +275,7 @@ public class GenerationStrategyPickerDialog extends Dialog {
 		asSingle = asSingleOne.getSelection();
 		
 		if (asSingle) {
-			fullOptimization = optimizeRes.getSelection();
-			randomSamplingOptimization = randomSamplingOptimizeRes.getSelection();
+			greedy2Optimization = greedy2OptimizationButton.getSelection();
 			greadyOptimization = greadyOptimizationButton.getSelection();
 		}
 		

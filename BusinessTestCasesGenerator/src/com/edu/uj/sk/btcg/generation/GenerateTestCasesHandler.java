@@ -68,9 +68,7 @@ public class GenerateTestCasesHandler extends AbstractHandler {
 	    			dialog.getChosenProcessors(), 
 	    			dialog.asSingleStrategy(),
 	    			dialog.greadyOptimization(),
-	    			dialog.fullOptimization(),
-	    			dialog.randomSamplingOptimization(),
-	    			dialog.sampleSize(),
+	    			dialog.greedy2Optimization(),
 	    			modelToProcess);
 
 	    	refreshPackageExplorer(modelToProcess);
@@ -98,9 +96,7 @@ public class GenerateTestCasesHandler extends AbstractHandler {
 			processors, 
 			boolean asSingleStrategy, 
 			boolean greedyOptimization,
-			boolean fullOptimization, 
-			boolean randomSamplingOptimization,
-			int sampleSize,
+			boolean greedy2Optimization, 
 			IFile modelToProcess) {
 		
 		try {
@@ -114,9 +110,7 @@ public class GenerateTestCasesHandler extends AbstractHandler {
 					processors, 
 					asSingleStrategy, 
 					greedyOptimization,
-					fullOptimization, 
-					randomSamplingOptimization,
-					sampleSize,
+					greedy2Optimization, 
 					bpmnModel, 
 					persistTestCase
 				);
@@ -177,7 +171,7 @@ public class GenerateTestCasesHandler extends AbstractHandler {
 			List<IProcessor> processors, BpmnModel bpmnModel) {
 		List<Stats> uncombinedStrategiesStats;
 		TestCasePersister justCounting = justCountingPersister();
-		ProcessorsExecuter.process(processors, false, false, false, false, 0, bpmnModel, justCounting);
+		ProcessorsExecuter.process(processors, false, false, false, bpmnModel, justCounting);
 		
 		uncombinedStrategiesStats = justCounting.getStats();
 		

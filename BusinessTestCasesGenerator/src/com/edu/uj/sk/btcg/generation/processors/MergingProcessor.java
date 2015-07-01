@@ -5,24 +5,25 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import org.activiti.bpmn.model.BpmnModel;
 import org.apache.commons.lang3.tuple.Pair;
-import org.apache.commons.lang3.tuple.Triple;
 
 import com.edu.uj.sk.btcg.bpmn.BpmnUtil;
-import com.edu.uj.sk.btcg.collections.CCollections;
 import com.edu.uj.sk.btcg.generation.generators.IGenerator;
 import com.edu.uj.sk.btcg.generation.generators.impl.GenerationInfo;
 import com.edu.uj.sk.btcg.logging.CLogger;
 import com.edu.uj.sk.btcg.persistance.TestCasePersister;
 import com.google.common.base.Preconditions;
+import com.google.common.base.Stopwatch;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Multimap;
+import com.google.common.collect.Sets;
 
 public class MergingProcessor implements IProcessor {
 	private CLogger logger = CLogger.getLogger(MergingProcessor.class);
@@ -30,17 +31,13 @@ public class MergingProcessor implements IProcessor {
 	private List<IGenerator> generators;
 	private String processorName;
 	private boolean greedyOptimization;
-	private boolean fullOptimization;
-	private boolean randomSamplingOptimization;
-	private int sampleSize;
+	private boolean greedy2Optimization;
 	
 	public MergingProcessor(
 			String processorName, 
 			List<IGenerator> generators, 
 			boolean greedyOptimization,
-			boolean fullOptimization, 
-			boolean randomSamplingOptimization, 
-			int sampleSize) {
+			boolean greedy2Optimization) {
 		
 		Preconditions.checkNotNull(generators);
 		Preconditions.checkArgument(!generators.isEmpty());
@@ -48,9 +45,7 @@ public class MergingProcessor implements IProcessor {
 		this.generators = generators;
 		this.processorName = processorName;
 		this.greedyOptimization = greedyOptimization;
-		this.fullOptimization = fullOptimization;
-		this.randomSamplingOptimization = randomSamplingOptimization;
-		this.sampleSize = sampleSize;
+		this.greedy2Optimization = greedy2Optimization;
 	}
 	
 	
@@ -71,35 +66,29 @@ public class MergingProcessor implements IProcessor {
 		List<BpmnModel> models = removeDuplicates(notFilteredResults);
 		List<List<GenerationInfo>> infos = getValuesInSameOrderAsModels(models, notFilteredResults);
 		
+		
 		if (greedyOptimization) {
+			Stopwatch stoper = Stopwatch.createStarted();
+			logger.info("Greedy optimizaton started...");
+			
 			greedyOptimization(models, infos, model, persister);
 			
+			logger.info("Greedy optimization finished! In %s", stoper.stop());
 			
+		} else if (greedy2Optimization) {
+			Stopwatch stoper = Stopwatch.createStarted();
+			logger.info("Greedy^2 optimization started...");
+					
+			greedy2Optimization(models, infos, model, persister);
 			
-		} else if (fullOptimization) {
-			logger.info("Full optimization started...");
-			logger.info("Number of models: %s, number of combinations to check: %s", models.size(), Math.pow(2.0, models.size()));
-			
-			findMinimalSetCoveringAllTestRequirements(model, persister, models, infos);
-			
-			logger.info("Full optimization finished. Models stored");
-			
-		} else if (randomSamplingOptimization) {
-			models = selectSample(models);
-			infos = getValuesInSameOrderAsModels(models, notFilteredResults);
-			
-			logger.info("Random sampling optimization started...");
-			logger.info("Number of models: %s, number of combinations to check: %s", models.size(), Math.pow(2.0, models.size()));
-			
-			findMinimalSetWithBestCovering(model, persister, models, infos);
-			
-			logger.info("Random sampling optimization finished. Models stored");
+			logger.info("Greedy^2 optimization finished. In %s", stoper.stop());
 			
 		} else {
+			Stopwatch stoper = Stopwatch.createStarted();
 			logger.info("Storing generated models...");
 			store(persister, models);
 			
-			logger.info("Generated models stored");
+			logger.info("Generated models stored. In %s", stoper.stop());
 		}
 	}
 
@@ -110,30 +99,104 @@ public class MergingProcessor implements IProcessor {
 			final BpmnModel original,
 			TestCasePersister persister) throws IOException {
 		
-		List<Triple<BpmnModel, List<GenerationInfo>, Integer>> mi = IntStream.range(0, models.size())
-		.mapToObj(i -> Triple.of(models.get(i), infos.get(i), countCoveredTestRequirementsNumber(models.get(i), infos.get(i))))
-		.collect(Collectors.toList());
-		
-		mi = mi.stream()
-			.sorted((a1, a2) -> a2.getRight() - a1.getRight())
-			.collect(Collectors.toList());
+		List<Greedy> greedyList = toGreedyList(models, infos, original);
+		Collections.sort(greedyList);
 		
 		List<GenerationInfo> infosTotal = Lists.newArrayList();
-		for (int i = 0; i < mi.size(); ++i) {
-			Triple<BpmnModel, List<GenerationInfo>, Integer> modelInfo = mi.get(i);
+		for (Greedy greedy : greedyList) {
 			
-			
-			if (infosTotal.containsAll(modelInfo.getMiddle()))
+			if (greedy.doesNotContainAnythingNew(infosTotal))
 				continue;
 			
-			infosTotal.addAll(modelInfo.getMiddle());
+			infosTotal.addAll(greedy.infos);
 			
-			persister.persist(processorName, modelInfo.getLeft());
+			persister.persist(processorName, greedy.model);
 			if (allTestRequirementCovered(original, infosTotal))
 				break;
 		}
 	}
 
+
+	private List<Greedy> toGreedyList(final List<BpmnModel> models,
+			final List<List<GenerationInfo>> infos, final BpmnModel original) {
+		
+		List<Greedy> mi = IntStream.range(0, models.size())
+				.mapToObj(i -> newGreedy(original, models.get(i), infos.get(i)))
+				.collect(Collectors.toList());
+		
+		return mi;
+	}
+
+	
+	
+	private class Greedy implements Comparable<Greedy> {
+		BpmnModel originalModel;
+		BpmnModel model;
+		List<GenerationInfo> infos;
+		Integer covered = 0;
+				
+		public Greedy recalculateCovered() {
+			covered = countCoveredTestRequirementsNumber(originalModel, Lists.newArrayList(infos));
+			return this;
+		}
+
+		@Override
+		public int compareTo(Greedy o) {
+			return o.covered.compareTo(covered);
+		}
+		
+		public boolean doesNotContainAnythingNew(List<GenerationInfo> infos) {
+			return infos.containsAll(this.infos);
+		}
+		
+		public Greedy removeAll(List<GenerationInfo> infos) {
+			this.infos.removeAll(infos);
+			return this;
+		}
+	}
+	
+	private Greedy newGreedy(BpmnModel originalModel, BpmnModel model, List<GenerationInfo> infos) {
+		Greedy greedy = new Greedy();
+		greedy.originalModel = originalModel;
+		greedy.model = model;
+		greedy.infos = Lists.newArrayList(infos);
+		
+		greedy.recalculateCovered();
+		
+		return greedy;
+	}
+	
+	
+	
+	private void greedy2Optimization(
+			final List<BpmnModel> models,
+			final List<List<GenerationInfo>> infos,
+			final BpmnModel original,
+			TestCasePersister persister) throws IOException {
+		
+		List<Greedy> greedyList = toGreedyList(models, infos, original);
+		Collections.sort(greedyList);
+		
+		List<GenerationInfo> infosTotal = Lists.newArrayList();
+		while (!greedyList.isEmpty()) {
+			Greedy greedy = greedyList.remove(0);
+			
+			if (greedy.doesNotContainAnythingNew(infosTotal))
+				continue;
+			
+			infosTotal.addAll(greedy.infos);
+			
+			persister.persist(processorName, greedy.model);
+			if (allTestRequirementCovered(original, infosTotal))
+				break;
+			
+			greedyList.forEach(g -> g.removeAll(infosTotal).recalculateCovered());
+			greedyList = greedyList.stream().filter(g -> g.covered > 0).collect(Collectors.toList());
+			Collections.sort(greedyList);
+		}
+	}
+	
+	
 
 	
 	
@@ -157,63 +220,13 @@ public class MergingProcessor implements IProcessor {
 	}
 
 
-	private List<BpmnModel> selectSample(List<BpmnModel> models) {
-		Collections.shuffle(models);
-		return models.subList(0, sampleSize);
-	}
-	
-	
-	private void findMinimalSetCoveringAllTestRequirements(BpmnModel model,
-			TestCasePersister persister, List<BpmnModel> models,
-			List<List<GenerationInfo>> infos) throws IOException {
-		
-		Iterator<List<Integer>> powerSetIterator = 
-				CCollections.powerSetIterator(CCollections.range(models.size()));
-		
-		while (powerSetIterator.hasNext()) {
-			List<Integer> currentSet = powerSetIterator.next();
-			
-			List<GenerationInfo> currentInfoSet = pickInfosAndMergeAsSingleList(currentSet, infos);
-			
-			boolean found = allTestRequirementCovered(model, currentInfoSet);
-			
-			if (found) {
-				storeFoundBestTestCases(persister, models, currentSet);
-				
-				return;
-			}
-		}
-	}
 	
 	
 	
-	private void findMinimalSetWithBestCovering(
-			BpmnModel model,
-			TestCasePersister persister, 
-			List<BpmnModel> models,
-			List<List<GenerationInfo>> infos) throws IOException {
-		
-		int bestCoveredTestRequirementsNumber = 0;
-		List<Integer> bestSet = Lists.newArrayList();
-		
-		Iterator<List<Integer>> powerSetIterator = 
-				CCollections.powerSetIterator(CCollections.range(models.size()));
-		while (powerSetIterator.hasNext()) {
-			List<Integer> currentSet = powerSetIterator.next();
-			
-			List<GenerationInfo> currentInfoSet = pickInfosAndMergeAsSingleList(currentSet, infos);
-			
-			int coveredTestRequirementsNumber = countCoveredTestRequirementsNumber(model, currentInfoSet);
-			
-			if (coveredTestRequirementsNumber > bestCoveredTestRequirementsNumber) {
-				bestCoveredTestRequirementsNumber = coveredTestRequirementsNumber;
-				bestSet = currentSet;
-			}
-		}
-		
-		
-		storeFoundBestTestCases(persister, models, bestSet);
-	}
+	
+	
+	
+	
 
 
 
@@ -232,31 +245,6 @@ public class MergingProcessor implements IProcessor {
 
 
 
-	private List<GenerationInfo> pickInfosAndMergeAsSingleList(
-			List<Integer> currentSet, 
-			List<List<GenerationInfo>> infos) {
-		
-		return currentSet
-				.stream()
-				.map(i -> infos.get(i))
-				.reduce(Lists.newArrayList(), (acc, i) -> {
-					acc.addAll(i);
-					
-					return acc;
-				});
-				
-	}
-
-
-	private List<BpmnModel> pickModelsAndMergeAsSingleList(
-			List<Integer> currentSet,
-			List<BpmnModel> models) {
-		
-		return currentSet
-				.stream()
-				.map(i -> models.get(i))
-				.collect(Collectors.toList());
-	}
 
 
 	private void generateTestCases(
@@ -354,16 +342,7 @@ public class MergingProcessor implements IProcessor {
 		return number;
 	}
 	
-	private void storeFoundBestTestCases(
-			TestCasePersister persister,
-			List<BpmnModel> models, 
-			List<Integer> currentSet) throws IOException {
-		
-		List<BpmnModel> foundTestCasesSet = pickModelsAndMergeAsSingleList(currentSet, models);
-		
-		store(persister, foundTestCasesSet);
-	}
-
+	
 
 	private void store(
 			TestCasePersister persister, 
@@ -372,4 +351,5 @@ public class MergingProcessor implements IProcessor {
 		for (BpmnModel m : foundTestCasesSet)
 			persister.persist(processorName, m);
 	}
+	
 }
