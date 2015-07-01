@@ -2,7 +2,7 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: BusinessTestCasesGenerator
 Bundle-SymbolicName: com.edu.uj.sk.btcg;singleton:=true
-Bundle-Version: 1.0.1.qualifier
+Bundle-Version: 1.1.0.qualifier
 Bundle-Activator: com.edu.uj.sk.btcg.Activator
 Require-Bundle: org.eclipse.ui,
  org.eclipse.core.runtime,
