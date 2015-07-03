@@ -33,8 +33,6 @@ public class Processor implements IProcessor{
 	
 	@Override
 	public void process(BpmnModel model, TestCasePersister persister) throws Exception {
-		logger.info("Processor [%s] started...", processorName);
-		
 		Iterator<Pair<BpmnModel, GenerationInfo>> iterator = generator.generate(model);
 		while (iterator.hasNext()) {
 			Pair<BpmnModel, GenerationInfo> newTestCase = iterator.next();
@@ -42,8 +40,6 @@ public class Processor implements IProcessor{
 			persister.persist(processorName, newTestCase.getKey(), preserveDuplications);
 			
 		}
-		
-		logger.info("Processor [%s] finished", processorName);
 	}
 
 

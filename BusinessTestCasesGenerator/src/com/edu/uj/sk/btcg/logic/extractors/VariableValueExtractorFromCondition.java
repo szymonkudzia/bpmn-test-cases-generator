@@ -1,7 +1,6 @@
 package com.edu.uj.sk.btcg.logic.extractors;
 
 import java.util.Optional;
-import java.util.Random;
 import java.util.UUID;
 
 import org.activiti.bpmn.model.SequenceFlow;

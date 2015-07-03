@@ -107,7 +107,10 @@ public class KEdgeCoverage implements IGenerator {
 			
 			
 			int currentBestCoverage = Integer.MAX_VALUE;
-			for (List<List<SequenceFlow>> paths : CCollections.powerSet(allPaths)) {
+			Iterator<List<List<SequenceFlow>>> iterator = CCollections.powerSetIterator(allPaths);
+			while (iterator.hasNext()) {
+				List<List<SequenceFlow>> paths = iterator.next();
+				
 				if (paths.size() > currentBestCoverage) continue;
 				
 				if (coversAllPaths(paths, kConnectionsTuples)) {

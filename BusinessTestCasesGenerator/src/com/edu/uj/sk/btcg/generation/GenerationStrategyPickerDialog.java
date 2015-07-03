@@ -88,11 +88,11 @@ public class GenerationStrategyPickerDialog extends Dialog {
 		noOptimization.setEnabled(false);
 		noOptimization.setSelection(true);
 		
-		greadyOptimizationButton = createRadioButton(container, "Perform greedy optimalization");
+		greadyOptimizationButton = createRadioButton(container, "Perform greedy optimization");
 		greadyOptimizationButton.setEnabled(false);
 		
 				
-		greedy2OptimizationButton = createRadioButton(container, "Perform greedy^2 optimalization");
+		greedy2OptimizationButton = createRadioButton(container, "Perform greedy^2 optimization");
 		greedy2OptimizationButton.setSelection(false);
 		greedy2OptimizationButton.setEnabled(false);
 		

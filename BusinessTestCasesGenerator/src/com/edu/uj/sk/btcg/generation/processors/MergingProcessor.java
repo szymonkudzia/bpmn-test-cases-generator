@@ -1,7 +1,9 @@
 package com.edu.uj.sk.btcg.generation.processors;
 
 import java.io.IOException;
+import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -19,7 +21,7 @@ import com.edu.uj.sk.btcg.logging.CLogger;
 import com.edu.uj.sk.btcg.persistance.TestCasePersister;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Stopwatch;
-import com.google.common.collect.HashMultimap;
+import com.google.common.collect.LinkedListMultimap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Multimap;
@@ -56,7 +58,7 @@ public class MergingProcessor implements IProcessor {
 		
 		logger.info("Generating models...");
 		
-		Multimap<BpmnModel, GenerationInfo> notFilteredResults = HashMultimap.create();
+		Multimap<BpmnModel, GenerationInfo> notFilteredResults = LinkedListMultimap.create();
 		Pair<BpmnModel, List<GenerationInfo>> modelGenerationInfo = Pair.of(model, Lists.newArrayList());
 		
 		generateTestCases(modelGenerationInfo, notFilteredResults, generators.get(0), generators.subList(1, generators.size()));
@@ -100,9 +102,10 @@ public class MergingProcessor implements IProcessor {
 			TestCasePersister persister) throws IOException {
 		
 		List<Greedy> greedyList = toGreedyList(models, infos, original);
+		Collections.sort(greedyList, generationInfoComparator());
 		Collections.sort(greedyList);
 		
-		List<GenerationInfo> infosTotal = Lists.newArrayList();
+		Set<GenerationInfo> infosTotal = Sets.newHashSet();
 		for (Greedy greedy : greedyList) {
 			
 			if (greedy.doesNotContainAnythingNew(infosTotal))
@@ -136,7 +139,7 @@ public class MergingProcessor implements IProcessor {
 		Integer covered = 0;
 				
 		public Greedy recalculateCovered() {
-			covered = countCoveredTestRequirementsNumber(originalModel, Lists.newArrayList(infos));
+			covered = countCoveredTestRequirementsNumber(originalModel, infos);
 			return this;
 		}
 
@@ -145,27 +148,36 @@ public class MergingProcessor implements IProcessor {
 			return o.covered.compareTo(covered);
 		}
 		
-		public boolean doesNotContainAnythingNew(List<GenerationInfo> infos) {
+		public boolean doesNotContainAnythingNew(Collection<GenerationInfo> infos) {
 			return infos.containsAll(this.infos);
 		}
 		
-		public Greedy removeAll(List<GenerationInfo> infos) {
-			this.infos.removeAll(infos);
+		public Greedy removeAll(List<GenerationInfo> other) {
+			this.infos.removeAll(other);
 			return this;
 		}
+		
 	}
 	
 	private Greedy newGreedy(BpmnModel originalModel, BpmnModel model, List<GenerationInfo> infos) {
 		Greedy greedy = new Greedy();
 		greedy.originalModel = originalModel;
 		greedy.model = model;
-		greedy.infos = Lists.newArrayList(infos);
+		greedy.infos = infos;
 		
 		greedy.recalculateCovered();
 		
 		return greedy;
 	}
 	
+	public Comparator<Greedy> generationInfoComparator() {
+		return (obj, other) -> {
+			int n1 = obj.infos.stream().map(x -> x.hashCode()).reduce((x, a) -> x * a).orElse(0);
+			int n2 = other.infos.stream().map(x -> x.hashCode()).reduce((x, a) -> x * a).orElse(0);
+			
+			return n1 - n2;
+		};
+	}
 	
 	
 	private void greedy2Optimization(
@@ -175,6 +187,7 @@ public class MergingProcessor implements IProcessor {
 			TestCasePersister persister) throws IOException {
 		
 		List<Greedy> greedyList = toGreedyList(models, infos, original);
+		Collections.sort(greedyList, generationInfoComparator());
 		Collections.sort(greedyList);
 		
 		List<GenerationInfo> infosTotal = Lists.newArrayList();
@@ -205,7 +218,7 @@ public class MergingProcessor implements IProcessor {
 		
 		final Map<String, Void> map = Maps.newHashMap();
 		
-		return notFilteredResults.keySet()
+		return notFilteredResults.keys()
 			.stream()
 			.filter(m -> {
 				String key = BpmnUtil.toString(m);
@@ -318,11 +331,11 @@ public class MergingProcessor implements IProcessor {
 	
 	private boolean allTestRequirementCovered(
 			BpmnModel model,
-			List<GenerationInfo> currentInfoSet) {
+			Collection<GenerationInfo> currentInfoSet) {
 		
 		for (IGenerator generator : generators) {
-			if (!generator.allTestRequirementsCovered(model, currentInfoSet)) {
-				logger.info("Some TC from generator: %s are not covered!", generator.getClass().getName());
+			if (!generator.allTestRequirementsCovered(model, Lists.newArrayList(currentInfoSet))) {
+//				logger.info("Some TC from generator: %s are not covered!", generator.getClass().getName());
 				return false;
 			}
 		}

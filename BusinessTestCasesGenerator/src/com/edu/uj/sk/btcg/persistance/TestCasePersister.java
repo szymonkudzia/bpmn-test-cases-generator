@@ -83,8 +83,6 @@ public class TestCasePersister {
 		
 		Path path = createPath(destination, ++fileIndex);
 			
-		logger.info("Writing output nr: %d to file: \"%s\"", fileIndex, path.toString());
-			
 		Files.write(path, generatedTestCase.getBytes(Charset.forName("UTF-8")), StandardOpenOption.CREATE);
 	}
 	

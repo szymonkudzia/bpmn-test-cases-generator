@@ -1,6 +1,7 @@
 package com.edu.uj.sk.btcg.generation.generators.impl;
 
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -120,7 +121,7 @@ public class CoverageByInputManipulation implements IGenerator {
 		private Map<Integer, String> indexVariableMap = Maps.newHashMap();
 		
 		// concatenated variable name and value
-		private Set<String> testRequirement = Sets.newHashSet(); 
+		private Set<String> testRequirement = Sets.newHashSet();
 		
 		public It(BpmnModel originalModel) {
 			super(originalModel);
@@ -141,7 +142,9 @@ public class CoverageByInputManipulation implements IGenerator {
 		
 		
 		public List<String> getAllTestRequirements() {
-			return Lists.newArrayList(testRequirement);
+			List<String> list = Lists.newArrayList(testRequirement);
+			Collections.sort(list);
+			return list;
 		}
 
 
@@ -490,7 +493,10 @@ class InputManipulationInfo extends GenerationInfo {
 	}
 	
 	public static InputManipulationInfo create(Set<String> variableValue) {
-		return new InputManipulationInfo(Lists.newArrayList(variableValue));
+		List<String> list = Lists.newArrayList(variableValue);
+		Collections.sort(list);
+		
+		return new InputManipulationInfo(list);
 	}
 
 	@Override
